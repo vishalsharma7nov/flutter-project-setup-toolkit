@@ -1,10 +1,10 @@
 # Flutter Project Setup Toolkit — desktop app
 
-The `studio_app/` package is a thin **macOS** shell that loads the Flutter Project Setup Toolkit web UI in a native window.
+The `studio_app/` package is a thin **desktop shell** (macOS and Windows) that loads the Flutter Project Setup Toolkit web UI in a native window.
 
 ## Prerequisites
 
-- Flutter SDK with macOS desktop enabled
+- Flutter SDK with macOS and/or Windows desktop enabled
 - Run commands from the **flutter-project-setup-toolkit** repository root (where `studio_app/` lives)
 
 ## Launch
@@ -17,6 +17,27 @@ cd flutter-project-setup-toolkit
 On macOS the **desktop app** opens by default. The project picker appears first — no `--project` required.
 
 Use `./scripts/toolkit-studio.sh --browser` to open in a web browser instead.
+
+On Windows, run the Studio server in the browser until a Windows desktop shell is packaged for release:
+
+```bash
+dart run :toolkit_studio --browser
+```
+
+### macOS entry point
+
+The macOS shell uses `lib/main_darwin.dart` (WebKit WebView init). CI and local release builds:
+
+```bash
+cd studio_app
+flutter build macos --release -t lib/main_darwin.dart
+```
+
+Windows uses the default `lib/main.dart`.
+
+## CI desktop builds
+
+On every push to `main`, GitHub Actions builds **macOS** and **Windows** release artifacts from `studio_app/` (workflow: `.github/workflows/desktop-build.yml`). Download artifacts from the Actions tab for smoke testing.
 
 On first launch the macOS app will:
 

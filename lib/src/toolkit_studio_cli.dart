@@ -188,7 +188,7 @@ Future<int> _launchDesktopApp(ArgResults args) async {
     exit(0);
   });
 
-  final flutterArgs = <String>['run', '-d', 'macos'];
+  final flutterArgs = <String>['run', '-d', 'macos', '-t', 'lib/main_darwin.dart'];
   if (view != null && view.isNotEmpty) {
     flutterArgs.add('--dart-define=RTK_VIEW=$view');
   }

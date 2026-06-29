@@ -1,0 +1,81 @@
+name: Desktop build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-macos:
+    name: Build macOS (studio_app)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Resolve dependencies
+        working-directory: studio_app
+        run: flutter pub get
+
+      - name: Analyze studio_app
+        working-directory: studio_app
+        run: flutter analyze lib
+
+      - name: Test studio_app
+        working-directory: studio_app
+        run: flutter test
+
+      - name: Build macOS release
+        working-directory: studio_app
+        run: flutter build macos --release -t lib/main_darwin.dart
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-app-macos
+          path: studio_app/build/macos/Build/Products/Release/*.app
+          if-no-files-found: error
+
+  build-windows:
+    name: Build Windows (studio_app)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Resolve dependencies
+        working-directory: studio_app
+        run: flutter pub get
+
+      - name: Analyze studio_app
+        working-directory: studio_app
+        run: flutter analyze lib
+
+      - name: Test studio_app
+        working-directory: studio_app
+        run: flutter test
+
+      - name: Build Windows release
+        working-directory: studio_app
+        run: flutter build windows --release
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-app-windows
+          path: |
+            studio_app/build/windows/x64/runner/Release/
+          if-no-files-found: error
