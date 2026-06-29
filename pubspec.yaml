@@ -1,0 +1,28 @@
+name: flutter_project_setup_toolkit
+description: Flutter Project Setup Toolkit — setup, builds, feature scaffolding, and release workflows.
+version: 0.1.0
+repository: https://github.com/vishalsharma7nov/flutter-project-setup-toolkit
+homepage: https://github.com/vishalsharma7nov/flutter-project-setup-toolkit
+issue_tracker: https://github.com/vishalsharma7nov/flutter-project-setup-toolkit/issues
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  args: ^2.7.0
+  path: ^1.9.1
+
+dev_dependencies:
+  lints: ^5.1.1
+  test: ^1.25.8
+
+executables:
+  setup_project:
+  classify_version_bump:
+  build_android:
+  build_ios_ipa:
+  build_distribution:
+  toolkit_studio:
+  setup_studio:
+  make_feature:
+  architecture_audit:

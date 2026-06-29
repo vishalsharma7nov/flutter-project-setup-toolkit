@@ -1,0 +1,16 @@
+{
+  "description": "Example custom feature template for Tier 4 architecture preset",
+  "feature_base_path": "lib/features/{{feature}}",
+  "directories": [
+    "domain",
+    "data",
+    "presentation/pages",
+    "presentation/widgets"
+  ],
+  "files": [
+    "domain/{{prefix}}entity.dart",
+    "data/{{prefix}}repository.dart",
+    "presentation/pages/{{prefix}}page.dart",
+    "presentation/widgets/{{prefix}}widget.dart"
+  ]
+}

@@ -1,0 +1,26 @@
+# Dart
+.dart_tool/
+.packages
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+*.egg-info/
+.pytest_cache/
+
+# Go build output (do not ignore Dart package bin/)
+/go/bin/
+*.test
+
+# OS / editor
+.DS_Store
+.idea/
+studio_app/.idea/
+.vscode/
+**/.flutter-plugins-dependencies
+
+# Local test config
+release-toolkit.config.json

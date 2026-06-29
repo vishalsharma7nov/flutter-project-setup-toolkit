@@ -1,0 +1,73 @@
+{
+  "$schema": "https://raw.githubusercontent.com/vishalsharma7nov/flutter-project-setup-toolkit/main/schema/release-toolkit.config.schema.json",
+  "default_environment": "dev",
+  "state_management": "bloc",
+  "architecture": {
+    "preset": "feature_first_clean",
+    "feature_base_path": "lib/features",
+    "layers": {
+      "domain": true,
+      "data": true,
+      "presentation": true,
+      "use_cases": true
+    },
+    "bootstrap": {
+      "core": true,
+      "app_router": true,
+      "shared": false,
+      "melos": false,
+      "flavor_mains": false,
+      "scaffold_test_mirror": false
+    },
+    "core_modules": {
+      "errors": false,
+      "logging": false,
+      "theme": false,
+      "connectivity": false
+    },
+    "routing": "go_router",
+    "dependency_injection": "get_it",
+    "scaffold_starter_code": false
+  },
+  "api": {
+    "protocol": "rest",
+    "rest_client": "dio",
+    "use_retrofit": true,
+    "codegen": {
+      "json_serializable": true,
+      "freezed": false
+    },
+    "local_cache": "none",
+    "realtime": "none",
+    "base_url_env_key": "API_BASE_URL",
+    "auth_interceptor": false,
+    "client_source": "pub_dev"
+  },
+  "environments": {
+    "dev": ".env/development.env",
+    "staging": ".env/staging.env",
+    "prod": ".env/production.env"
+  },
+  "version_keys": {
+    "android_name": "APP_VERSION_NAME",
+    "android_code": "APP_VERSION_CODE",
+    "ios_marketing": "BUNDLE_VERSION_STRING",
+    "ios_build": "BUNDLE_VERSION"
+  },
+  "build": {
+    "android_flavor": null,
+    "ios_flavor": null,
+    "ios_scheme": "Runner",
+    "open_organizer": true
+  },
+  "main_dart_env_rules": [
+    {
+      "match": "const environment = Environment.production;",
+      "environment": "prod"
+    },
+    {
+      "match": "const environment = Environment.development;",
+      "environment": "dev"
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/vishalsharma7nov/flutter-project-setup-toolkit/main/schema/release-toolkit.config.schema.json",
+  "title": "Release Toolkit Config",
+  "description": "Configuration for flutter_project_setup_toolkit release and setup workflows.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "default_environment": { "type": "string" },
+    "state_management": {
+      "type": "string",
+      "enum": ["none", "bloc", "riverpod", "provider", "getx", "stacked", "mobx"]
+    },
+    "architecture": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preset": { "type": "string" },
+        "feature_base_path": { "type": "string" },
+        "layers": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "domain": { "type": "boolean" },
+            "data": { "type": "boolean" },
+            "presentation": { "type": "boolean" },
+            "use_cases": { "type": "boolean" }
+          }
+        },
+        "bootstrap": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "core": { "type": "boolean" },
+            "app_router": { "type": "boolean" },
+            "shared": { "type": "boolean" },
+            "melos": { "type": "boolean" },
+            "flavor_mains": { "type": "boolean" },
+            "scaffold_test_mirror": { "type": "boolean" },
+            "auto_wire": { "type": "boolean" }
+          }
+        },
+        "core_modules": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "errors": { "type": "boolean" },
+            "logging": { "type": "boolean" },
+            "theme": { "type": "boolean" },
+            "connectivity": { "type": "boolean" }
+          }
+        },
+        "routing": {
+          "type": "string",
+          "enum": ["none", "go_router", "auto_route"]
+        },
+        "dependency_injection": {
+          "type": "string",
+          "enum": ["none", "get_it", "injectable", "riverpod"]
+        },
+        "scaffold_starter_code": { "type": "boolean" },
+        "custom_template_path": { "type": "string" },
+        "custom_template": { "type": "object" }
+      }
+    },
+    "api": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "protocol": {
+          "type": "string",
+          "enum": ["rest", "graphql", "grpc", "mixed", "external_sdk"]
+        },
+        "secondary_protocol": {
+          "type": "string",
+          "enum": ["rest", "graphql", "grpc", "mixed", "external_sdk"]
+        },
+        "client_source": {
+          "type": "string",
+          "enum": ["pub_dev", "external_sdk"]
+        },
+        "rest_client": {
+          "type": "string",
+          "enum": ["dio", "http"]
+        },
+        "use_retrofit": { "type": "boolean" },
+        "codegen": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "json_serializable": { "type": "boolean" },
+            "freezed": { "type": "boolean" }
+          }
+        },
+        "local_cache": {
+          "type": "string",
+          "enum": ["none", "hive", "isar", "drift"]
+        },
+        "realtime": {
+          "type": "string",
+          "enum": ["none", "websocket", "firebase"]
+        },
+        "base_url_env_key": { "type": "string" },
+        "websocket_url_env_key": { "type": "string" },
+        "auth_interceptor": { "type": "boolean" },
+        "external_sdk": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "package_name": { "type": "string" },
+            "source": { "type": "string" },
+            "path": { "type": "string" },
+            "init_hint": { "type": "string" },
+            "contract_url": { "type": "string" },
+            "git": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "url": { "type": "string" },
+                "ref": { "type": "string" },
+                "path": { "type": "string" }
+              },
+              "required": ["url"]
+            },
+            "hosted": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "url": { "type": "string" },
+                "version": { "type": "string" }
+              },
+              "required": ["url", "version"]
+            }
+          }
+        }
+      }
+    },
+    "environments": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "version_keys": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "android_name": { "type": "string" },
+        "android_code": { "type": "string" },
+        "ios_marketing": { "type": "string" },
+        "ios_build": { "type": "string" }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "android_flavor": { "type": ["string", "null"] },
+        "ios_flavor": { "type": ["string", "null"] },
+        "ios_scheme": { "type": "string" },
+        "open_organizer": { "type": "boolean" }
+      }
+    },
+    "main_dart_env_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "match": { "type": "string" },
+          "environment": { "type": "string" }
+        },
+        "required": ["match", "environment"]
+      }
+    }
+  }
+}
