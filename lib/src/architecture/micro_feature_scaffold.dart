@@ -7,7 +7,6 @@ import '../models.dart';
 import 'architecture_config.dart';
 import 'architecture_layers.dart';
 import 'architecture_preset.dart';
-import 'feature_naming.dart';
 
 /// Relative paths created when bootstrapping a micro-feature monorepo.
 List<String> microFeatureBootstrapPaths({required String projectName}) {
@@ -126,7 +125,6 @@ Future<List<String>> scaffoldMicroFeaturePackage({
   final createdPaths = <String>[];
   final packageRoot = p.join('packages', featureName);
   final srcRoot = p.join(packageRoot, 'lib', 'src');
-  final displayRoot = packageRoot;
 
   final packageFiles = <String, String>{
     p.join(packageRoot, 'pubspec.yaml'): microFeaturePackagePubspec(featureName),

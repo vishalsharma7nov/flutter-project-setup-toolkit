@@ -537,8 +537,8 @@ Future<SetupPlan> collectSetupPlanInteractive({
       orElse: () => ApiProtocol.rest,
     );
     if (protocol == ApiProtocol.externalSdk) {
-      final packageName = promptLine('External SDK package name') ?? '';
-      final gitUrl = promptLine('Git repository URL') ?? '';
+      final packageName = promptLine('External SDK package name');
+      final gitUrl = promptLine('Git repository URL');
       api = ApiConfig(
         protocol: ApiProtocol.externalSdk,
         clientSource: ApiClientSource.externalSdk,

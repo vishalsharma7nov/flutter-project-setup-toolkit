@@ -8,7 +8,7 @@ String generateGitHubActionsWorkflow({
   final envNames = config.environments.keys.toList();
   final defaultEnv = config.defaultEnvironment ?? 'dev';
   final androidFlavor = config.build.androidFlavor;
-  final iosScheme = config.build.iosScheme ?? config.build.iosFlavor ?? 'Runner';
+  final iosScheme = config.build.iosScheme;
 
   final envListYaml = envNames.map((e) => '          - $e').join('\n');
 

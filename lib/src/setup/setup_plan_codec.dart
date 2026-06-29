@@ -5,8 +5,6 @@ import 'package:path/path.dart' as p;
 import '../api/api_config.dart';
 import '../architecture/architecture_compatibility.dart';
 import '../architecture/architecture_config.dart';
-import '../architecture/architecture_compatibility.dart';
-import '../architecture/architecture_preset.dart';
 import '../api/api_protocol.dart';
 import '../config.dart';
 import '../models.dart';

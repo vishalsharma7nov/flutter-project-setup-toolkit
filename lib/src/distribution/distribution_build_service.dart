@@ -81,7 +81,7 @@ class DistributionBuildService {
           envName: envName,
           envSource: envSource,
         );
-        envFile = resolvedEnv!.file;
+        envFile = resolvedEnv.file;
       }
       if (envFile == null) {
         _log('No env file — building without --dart-define-from-file');

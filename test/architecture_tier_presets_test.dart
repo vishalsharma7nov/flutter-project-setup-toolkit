@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter_project_setup_toolkit/src/api/api_config.dart';
 import 'package:flutter_project_setup_toolkit/src/architecture/architecture_compatibility.dart';
 import 'package:flutter_project_setup_toolkit/src/architecture/architecture_config.dart';
 import 'package:flutter_project_setup_toolkit/src/architecture/architecture_layers.dart';
