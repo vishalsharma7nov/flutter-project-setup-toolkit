@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 import 'browser_util.dart';
 import 'config.dart';
+import 'studio/studio_bind.dart';
 import 'studio/toolkit_studio_server.dart';
 import 'studio/studio_branding.dart';
 import 'toolkit_install.dart';
@@ -14,6 +15,12 @@ Future<int> runToolkitStudio(List<String> arguments) async {
   final parser = ArgParser()
     ..addOption('project', abbr: 'p', help: 'Flutter project root (pre-filled in UI)')
     ..addOption('port', help: 'Local web server port (default: 8765)')
+    ..addOption(
+      'host',
+      help: 'Bind address: loopback (default) or lan (mobile companion)',
+      allowed: ['loopback', 'lan'],
+      defaultsTo: 'loopback',
+    )
     ..addOption('view', help: 'Deep link: setup | build | feature | version | quick-test')
     ..addFlag(
       'desktop',
@@ -39,7 +46,8 @@ Future<int> runToolkitStudio(List<String> arguments) async {
     return _launchDesktopApp(args);
   }
 
-  final port = await _resolvePort(args['port'] as String?);
+  final bindMode = parseStudioBindMode(args['host'] as String?);
+  final port = await _resolvePort(args['port'] as String?, bindMode: bindMode);
   if (port == null) {
     return 1;
   }
@@ -50,23 +58,29 @@ Future<int> runToolkitStudio(List<String> arguments) async {
     projectRoot = resolveProjectRoot(projectArg);
   }
 
-  final server = ToolkitStudioServer(projectRoot: projectRoot, port: port);
-  final view = args['view'] as String?;
-  final viewPath = switch (view) {
-    'setup' => '/setup',
-    'build' => '/build',
-    'feature' => '/feature',
-    'version' => '/version',
-    'quick-test' => '/quick-test',
-    _ => '/',
-  };
-  final url = 'http://127.0.0.1:$port$viewPath';
+  final viewPath = _viewPathFor(args['view'] as String?);
+  final localUrl = 'http://127.0.0.1:$port$viewPath';
+  final lanAddresses =
+      bindMode == StudioBindMode.lan ? await detectLanIpv4Addresses() : null;
 
-  _printBanner(url, projectRoot?.path, desktop: false);
+  _printBanner(
+    localUrl: localUrl,
+    projectPath: projectRoot?.path,
+    desktop: false,
+    bindMode: bindMode,
+    port: port,
+    lanAddresses: lanAddresses,
+  );
 
   if (!(args['no-browser'] as bool)) {
-    await openBrowser(url);
+    await openBrowser(localUrl);
   }
+
+  final server = ToolkitStudioServer(
+    projectRoot: projectRoot,
+    port: port,
+    bindMode: bindMode,
+  );
 
   final shutdown = Completer<void>();
   ProcessSignal.sigint.watch().listen((_) async {
@@ -107,13 +121,24 @@ Directory _resolveStudioAppDir() {
   return Directory(p.join(toolkitRoot.path, 'studio_app'));
 }
 
-Future<int?> _resolvePort(String? portArg) async {
+String _viewPathFor(String? view) {
+  return switch (view) {
+    'setup' => '/setup',
+    'build' => '/build',
+    'feature' => '/feature',
+    'version' => '/version',
+    'quick-test' => '/quick-test',
+    _ => '/',
+  };
+}
+
+Future<int?> _resolvePort(String? portArg, {required StudioBindMode bindMode}) async {
   final preferred = int.tryParse(portArg ?? '') ?? 8765;
   if (preferred < 1024 || preferred > 65535) {
     stderr.writeln('Invalid port: $preferred');
     return null;
   }
-  final available = await _findAvailablePort(preferred);
+  final available = await _findAvailablePort(preferred, bindMode: bindMode);
   if (available == null) {
     stderr.writeln(
       'No free port found near $preferred. Stop other studio instances or pass --port.',
@@ -126,10 +151,11 @@ Future<int?> _resolvePort(String? portArg) async {
   return available;
 }
 
-Future<int?> _findAvailablePort(int preferred) async {
+Future<int?> _findAvailablePort(int preferred, {required StudioBindMode bindMode}) async {
+  final address = bindAddressFor(bindMode);
   for (var port = preferred; port < preferred + 20; port++) {
     try {
-      final socket = await ServerSocket.bind(InternetAddress.loopbackIPv4, port);
+      final socket = await ServerSocket.bind(address, port);
       await socket.close();
       return port;
     } on SocketException {
@@ -149,7 +175,8 @@ Future<int> _launchDesktopApp(ArgResults args) async {
     return 1;
   }
 
-  final port = await _resolvePort(args['port'] as String?);
+  final bindMode = parseStudioBindMode(args['host'] as String?);
+  final port = await _resolvePort(args['port'] as String?, bindMode: bindMode);
   if (port == null) {
     return 1;
   }
@@ -160,7 +187,11 @@ Future<int> _launchDesktopApp(ArgResults args) async {
     projectRoot = resolveProjectRoot(projectArg);
   }
 
-  final server = ToolkitStudioServer(projectRoot: projectRoot, port: port);
+  final server = ToolkitStudioServer(
+    projectRoot: projectRoot,
+    port: port,
+    bindMode: bindMode,
+  );
   try {
     await server.start();
   } on SocketException catch (e) {
@@ -168,17 +199,18 @@ Future<int> _launchDesktopApp(ArgResults args) async {
     return 1;
   }
 
-  final view = args['view'] as String?;
-  final viewPath = switch (view) {
-    'setup' => '/setup',
-    'build' => '/build',
-    'feature' => '/feature',
-    'version' => '/version',
-    'quick-test' => '/quick-test',
-    _ => '/',
-  };
-  final url = 'http://127.0.0.1:$port$viewPath';
-  _printBanner(url, projectRoot?.path, desktop: true);
+  final viewPath = _viewPathFor(args['view'] as String?);
+  final localUrl = 'http://127.0.0.1:$port$viewPath';
+  final lanAddresses =
+      bindMode == StudioBindMode.lan ? await detectLanIpv4Addresses() : null;
+  _printBanner(
+    localUrl: localUrl,
+    projectPath: projectRoot?.path,
+    desktop: true,
+    bindMode: bindMode,
+    port: port,
+    lanAddresses: lanAddresses,
+  );
   print('  Desktop shell:    ${studioAppDir.path}');
   print('');
 
@@ -189,6 +221,7 @@ Future<int> _launchDesktopApp(ArgResults args) async {
   });
 
   final flutterArgs = <String>['run', '-d', 'macos', '-t', 'lib/main_darwin.dart'];
+  final view = args['view'] as String?;
   if (view != null && view.isNotEmpty) {
     flutterArgs.add('--dart-define=RTK_VIEW=$view');
   }
@@ -205,17 +238,35 @@ Future<int> _launchDesktopApp(ArgResults args) async {
   return exitCode;
 }
 
-void _printBanner(String url, String? projectPath, {required bool desktop}) {
+void _printBanner({
+  required String localUrl,
+  required String? projectPath,
+  required bool desktop,
+  required StudioBindMode bindMode,
+  required int port,
+  List<String>? lanAddresses,
+}) {
   print('');
   print('╔══════════════════════════════════════════════════════════╗');
   print(studioBannerCenterLine());
   print('╚══════════════════════════════════════════════════════════╝');
   print('');
   if (desktop) {
-    print('  Studio server:    $url');
+    print('  Studio server:    $localUrl');
     print('  UI:               macOS desktop app');
   } else {
-    print('  Open in browser:  $url');
+    print('  Open in browser:  $localUrl');
+  }
+  if (bindMode == StudioBindMode.lan) {
+    final lanAddrs = lanAddresses ?? const <String>[];
+    if (lanAddrs.isEmpty) {
+      print('  Mobile companion: http://<this-mac-ip>:$port/quick-test');
+      print('                    (LAN IP not detected — check System Settings → Network)');
+    } else {
+      for (final addr in lanAddrs) {
+        print('  Mobile companion: http://$addr:$port/quick-test');
+      }
+    }
   }
   if (projectPath != null) {
     print('  Project:          $projectPath');

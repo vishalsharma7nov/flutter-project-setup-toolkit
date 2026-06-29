@@ -39,6 +39,17 @@ Windows uses the default `lib/main.dart`.
 
 On every push to `main`, GitHub Actions builds **macOS** and **Windows** release artifacts from `studio_app/` (workflow: `.github/workflows/desktop-build.yml`). Download artifacts from the Actions tab for smoke testing.
 
+## CI mobile builds
+
+On every push to `main`, GitHub Actions also builds the **Quick Test companion** for **Android** (release APK) and **iOS** (unsigned release `.app`, workflow: `.github/workflows/mobile-build.yml`). Download artifacts from the Actions tab for smoke testing.
+
+```bash
+# Local equivalents
+cd studio_app
+flutter build apk --release
+flutter build ios --release --no-codesign
+```
+
 On first launch the macOS app will:
 
 1. **Open without a project** — you are always sent to the project picker first
@@ -59,6 +70,25 @@ On first launch the macOS app will:
 ```
 
 See [toolkit-studio.md](toolkit-studio.md) for all studios and API routes.
+
+## Mobile Quick Test companion
+
+The same `studio_app/` package runs on **Android and iOS** as a native Quick Test client. Your Mac stays the build host.
+
+```bash
+# Mac (build host)
+./scripts/toolkit-studio.sh --host lan
+
+# Phone (same WiFi)
+cd studio_app && flutter run
+```
+
+1. Enter the Mac LAN IP shown at startup
+2. Paste a Git repo URL and tap **Build & install on this device**
+3. Android downloads the APK over WiFi and opens the system installer
+4. iOS shows TestFlight/USB guidance (WiFi sideload is not supported)
+
+See [toolkit-studio.md](toolkit-studio.md#mobile-companion-android--ios) for API details.
 
 ### Browser mode (default)
 

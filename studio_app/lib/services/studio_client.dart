@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import '../studio_branding.dart';
 import '../studio_log.dart';
 
 class StudioEnvironment {
@@ -81,61 +80,78 @@ class ProjectAnalysis {
 }
 
 class StudioClient {
-  StudioClient(String preferredPort)
-      : _preferredPort = preferredPort,
-        _activePort = preferredPort {
-    studioLog('StudioClient created (preferred port $_preferredPort)');
+  StudioClient(
+    String port, {
+    String host = '127.0.0.1',
+  })  : _host = host.trim().isEmpty ? '127.0.0.1' : host.trim(),
+        _preferredPort = port,
+        _activePort = port {
+    studioLog('StudioClient created (host=$_host port $_preferredPort)');
   }
 
+  final String _host;
   final String _preferredPort;
   String _activePort;
 
+  String get host => _host;
   String get port => _activePort;
-  Uri _baseFor(String port) => Uri.parse('http://127.0.0.1:$port');
+  bool get isLocalHost => _host == '127.0.0.1' || _host == 'localhost';
+
+  Uri get baseUri => Uri.parse('http://$_host:$_activePort');
 
   Uri _urlFor(
     String path, {
     String? port,
     Map<String, String>? queryParameters,
   }) {
-    return _baseFor(port ?? _activePort).replace(
+    return Uri.parse('http://$_host:${port ?? _activePort}').replace(
       path: path,
       queryParameters: queryParameters ?? const {},
     );
   }
 
   Future<void> waitForServer({Duration timeout = const Duration(seconds: 45)}) async {
-    studioLog('Waiting for studio server (timeout ${timeout.inSeconds}s)…');
+    studioLog('Waiting for studio server at $_host (timeout ${timeout.inSeconds}s)…');
     final deadline = DateTime.now().add(timeout);
     final preferred = int.tryParse(_preferredPort) ?? 8765;
-    final ports = <int>{
-      preferred,
-      for (var p = 8765; p <= 8785; p++) p,
-    };
 
     while (DateTime.now().isBefore(deadline)) {
-      for (final port in ports) {
-        if (await _pingPort(port)) {
-          if (_activePort != '$port') {
-            studioLog(
-              'Studio server found on port $port'
-              '${port != preferred ? ' (preferred was $preferred)' : ''}',
-            );
+      if (isLocalHost) {
+        final ports = <int>{
+          preferred,
+          for (var p = 8765; p <= 8785; p++) p,
+        };
+        for (final port in ports) {
+          if (await _pingPort(port)) {
+            if (_activePort != '$port') {
+              studioLog(
+                'Studio server found on port $port'
+                '${port != preferred ? ' (preferred was $preferred)' : ''}',
+              );
+            }
+            _activePort = '$port';
+            return;
           }
-          _activePort = '$port';
-          return;
         }
+      } else if (await _pingPort(preferred)) {
+        _activePort = '$preferred';
+        return;
       }
       await Future<void>.delayed(const Duration(milliseconds: 400));
     }
     studioLogError(
-      'Studio server not reachable on ports 8765–8785',
+      'Studio server not reachable at $_host',
       StateError('timeout'),
     );
     throw StateError(
-      'Could not reach $studioProductName (tried ports 8765–8785). '
-      'Start with: ./scripts/toolkit-studio.sh',
+      'Could not reach studio server at $_host:${isLocalHost ? '8765–8785' : preferred}. '
+      'On Mac run: ./scripts/toolkit-studio.sh --host lan',
     );
+  }
+
+  Future<bool> ping() async {
+    final port = int.tryParse(_activePort) ?? int.tryParse(_preferredPort) ?? 8765;
+    return _pingPort(port);
   }
 
   Future<bool> _pingPort(int port) async {
@@ -237,6 +253,37 @@ class StudioClient {
     }
   }
 
+  Future<Map<String, dynamic>> postJson(
+    String path,
+    Map<String, dynamic> payload,
+  ) {
+    return _postJson(path, payload);
+  }
+
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    Map<String, String>? queryParameters,
+  }) async {
+    final client = HttpClient();
+    final url = _urlFor(path, queryParameters: queryParameters);
+    try {
+      studioLog('HTTP GET $url');
+      final request = await client.getUrl(url);
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      final data = _decodeJsonMap(body, path: path, statusCode: response.statusCode);
+      if (response.statusCode != 200 && response.statusCode != 202) {
+        throw StateError(data['error'] as String? ?? 'Request failed ($path)');
+      }
+      return data;
+    } on Object catch (e, st) {
+      studioLogError('HTTP GET failed $path', e, st);
+      rethrow;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   Future<Map<String, dynamic>> _postJson(
     String path,
     Map<String, dynamic> payload,
@@ -254,7 +301,7 @@ class StudioClient {
         'HTTP POST ${response.statusCode} $path body=${studioLogPreview(body)}',
       );
       final data = _decodeJsonMap(body, path: path, statusCode: response.statusCode);
-      if (response.statusCode != 200) {
+      if (response.statusCode != 200 && response.statusCode != 202) {
         final analysis = data['analysis'];
         final extra = analysis is Map ? '\n${analysis['issues']}' : '';
         throw StateError(
@@ -264,6 +311,35 @@ class StudioClient {
       return data;
     } on Object catch (e, st) {
       studioLogError('HTTP POST failed $path', e, st);
+      rethrow;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<File> downloadFile(String path, File destination) async {
+    final client = HttpClient();
+    final url = _urlFor(path);
+    try {
+      studioLog('HTTP GET (download) $url');
+      final request = await client.getUrl(url);
+      final response = await request.close();
+      if (response.statusCode != HttpStatus.ok) {
+        final body = await response.transform(utf8.decoder).join();
+        Map<String, dynamic> data = {};
+        try {
+          data = jsonDecode(body) as Map<String, dynamic>;
+        } on Object {
+          // ignore
+        }
+        throw StateError(data['error'] as String? ?? 'Download failed ($path)');
+      }
+      final sink = destination.openWrite();
+      await response.forEach(sink.add);
+      await sink.close();
+      return destination;
+    } on Object catch (e, st) {
+      studioLogError('HTTP download failed $path', e, st);
       rethrow;
     } finally {
       client.close(force: true);
@@ -283,7 +359,7 @@ class StudioClient {
       );
       throw StateError(
         'Empty response from studio server ($path, HTTP $statusCode). '
-        'Restart ./scripts/toolkit-studio.sh — the server port may have changed.',
+        'Restart ./scripts/toolkit-studio.sh --host lan',
       );
     }
     try {
@@ -300,7 +376,7 @@ class StudioClient {
       );
       throw StateError(
         'Invalid JSON from studio server ($path): $e. '
-        'Restart ./scripts/toolkit-studio.sh.',
+        'Restart ./scripts/toolkit-studio.sh --host lan',
       );
     }
   }

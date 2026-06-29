@@ -18,7 +18,7 @@
 #   ./scripts/toolkit-studio.sh
 #   ./scripts/toolkit-studio.sh --browser
 #   ./scripts/toolkit-studio.sh --project /path/to/flutter_app
-#   ./scripts/toolkit-studio.sh --view quick-test
+#   ./scripts/toolkit-studio.sh --host lan --view quick-test
 #   ./scripts/toolkit-studio.sh --view setup --port 8767
 #
 # Options (passed to dart run :toolkit_studio):
@@ -26,6 +26,7 @@
 #   --view VIEW          setup | build | feature | version | quick-test
 #   --browser            Web UI instead of macOS desktop app
 #   --desktop            Force macOS desktop app
+#   --host HOST          loopback (default) or lan (mobile companion)
 #   --port PORT          HTTP port (default: 8765)
 #   --no-browser         Start server without opening a window/tab
 #

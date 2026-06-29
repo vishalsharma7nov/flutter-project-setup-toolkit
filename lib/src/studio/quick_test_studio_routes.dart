@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import '../env/env_source.dart';
 import '../git/git_remote_source.dart';
 import '../quick_test/quick_test_models.dart';
@@ -59,6 +61,10 @@ class QuickTestStudioRoutes {
       return true;
     }
 
+    if (request.method == 'GET' && path == '/api/quick-test/artifacts/download') {
+      return _handleArtifactDownload(request);
+    }
+
     if (request.method == 'POST' && path == '/api/quick-test/cancel') {
       await pipeline.cancel();
       runInProgress = false;
@@ -68,6 +74,39 @@ class QuickTestStudioRoutes {
     }
 
     return false;
+  }
+
+  Future<bool> _handleArtifactDownload(HttpRequest request) async {
+    final artifactPath = request.uri.queryParameters['path'];
+    if (artifactPath == null || artifactPath.trim().isEmpty) {
+      StudioHttp.respondJson(request.response, 400, {'error': 'path is required'});
+      await request.response.close();
+      return true;
+    }
+
+    if (!quickTestArtifactPathAllowed(artifactPath, jobState.artifactPaths)) {
+      StudioHttp.respondJson(request.response, 403, {
+        'error': 'Artifact not available for download',
+      });
+      await request.response.close();
+      return true;
+    }
+
+    final file = File(artifactPath);
+    final filename = p.basename(file.path);
+    request.response.headers.set(
+      'Content-Type',
+      quickTestArtifactContentType(file.path),
+    );
+    request.response.headers.set(
+      'Content-Disposition',
+      'attachment; filename="${filename.replaceAll('"', '')}"',
+    );
+    request.response.headers.set('Content-Length', '${await file.length()}');
+    request.response.statusCode = HttpStatus.ok;
+    await request.response.addStream(file.openRead());
+    await request.response.close();
+    return true;
   }
 
   Future<bool> _handlePreflight(HttpRequest request) async {

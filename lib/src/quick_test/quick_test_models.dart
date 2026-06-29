@@ -1,3 +1,5 @@
+import 'dart:io';
+
 enum QuickTestJobStatus {
   idle,
   running,
@@ -29,6 +31,7 @@ class QuickTestJobState {
       'started_at': startedAt?.toIso8601String(),
       'finished_at': finishedAt?.toIso8601String(),
       'artifact_paths': artifactPaths,
+      'artifact_urls': artifactPaths.map(quickTestArtifactDownloadUrl).toList(),
       'error': error,
       'logs': slice,
       'log_total': logs.length,
@@ -42,9 +45,15 @@ enum QuickTestPlatform {
   ios,
 }
 
+enum QuickTestInstallMode {
+  hostAdb,
+  clientDownload,
+}
+
 class QuickTestRunOptions {
   const QuickTestRunOptions({
     this.platform = QuickTestPlatform.all,
+    this.installMode = QuickTestInstallMode.hostAdb,
     this.installToDevices = true,
     this.includeTestflightIpa = true,
     this.selectedDeviceIds = const [],
@@ -54,6 +63,7 @@ class QuickTestRunOptions {
   });
 
   final QuickTestPlatform platform;
+  final QuickTestInstallMode installMode;
   final bool installToDevices;
   final bool includeTestflightIpa;
   final List<String> selectedDeviceIds;
@@ -69,8 +79,14 @@ class QuickTestRunOptions {
       'ios' => QuickTestPlatform.ios,
       _ => QuickTestPlatform.all,
     };
+    final installModeRaw = json['install_mode'] as String? ?? 'host_adb';
+    final installMode = switch (installModeRaw) {
+      'client_download' => QuickTestInstallMode.clientDownload,
+      _ => QuickTestInstallMode.hostAdb,
+    };
     return QuickTestRunOptions(
       platform: platform,
+      installMode: installMode,
       installToDevices: json['install_to_devices'] as bool? ?? true,
       includeTestflightIpa: json['include_testflight_ipa'] as bool? ?? true,
       selectedDeviceIds: ids is List
@@ -81,4 +97,34 @@ class QuickTestRunOptions {
       iosScheme: json['ios_scheme'] as String?,
     );
   }
+}
+
+String quickTestArtifactDownloadUrl(String artifactPath) {
+  return '/api/quick-test/artifacts/download?path=${Uri.encodeComponent(artifactPath)}';
+}
+
+bool quickTestArtifactPathAllowed(String requestedPath, List<String> allowedPaths) {
+  if (allowedPaths.isEmpty) return false;
+  final requested = _canonicalArtifactPath(requestedPath);
+  for (final allowed in allowedPaths) {
+    if (requested == _canonicalArtifactPath(allowed)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+String _canonicalArtifactPath(String path) {
+  return File(path).absolute.path;
+}
+
+String quickTestArtifactContentType(String path) {
+  final lower = path.toLowerCase();
+  if (lower.endsWith('.apk')) {
+    return 'application/vnd.android.package-archive';
+  }
+  if (lower.endsWith('.ipa')) {
+    return 'application/octet-stream';
+  }
+  return 'application/octet-stream';
 }

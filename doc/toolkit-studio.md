@@ -130,14 +130,34 @@ No local project checkout is required — Quick Test works from the hub without 
 |--------|------|-------------|
 | POST | `/api/quick-test/preflight` | Clone, Flutter check, devices, env |
 | POST | `/api/quick-test/run` | Start pipeline (202) |
-| GET | `/api/quick-test/status?offset=` | Logs and artifacts |
+| GET | `/api/quick-test/status?offset=` | Logs, artifact paths, and `artifact_urls` |
+| GET | `/api/quick-test/artifacts/download?path=` | Download build artifact (APK/IPA) |
 | POST | `/api/quick-test/cancel` | Cancel running process |
+
+### Mobile companion (Android / iOS)
+
+Use the **`studio_app`** native app on a phone while your **Mac** remains the build host:
+
+1. On Mac: `./scripts/toolkit-studio.sh --host lan` (prints a LAN URL for pairing)
+2. Install `studio_app` on Android or iOS (`cd studio_app && flutter run`)
+3. Enter Mac IP + port, paste Git URL, tap **Build & install on this device**
+
+The mobile app sends `install_mode: client_download` so the Mac builds only; Android phones download the APK over WiFi and open the system installer. **iOS over WiFi cannot sideload** — the app shows TestFlight/USB guidance after the Mac build completes.
+
+Run options for mobile clients:
+
+| Field | Value |
+|-------|-------|
+| `platform` | `android` or `ios` (auto from device OS) |
+| `install_mode` | `client_download` |
+| `install_to_devices` | `false` |
 
 Deep link:
 
 ```bash
 dart run :toolkit_studio --view quick-test
 ./scripts/toolkit-studio.sh --view quick-test
+./scripts/toolkit-studio.sh --host lan --view quick-test
 ```
 
 ## Feature Studio (`/feature`)

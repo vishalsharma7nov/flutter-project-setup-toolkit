@@ -239,9 +239,10 @@ class QuickTestPipeline {
 
       final allDevices = await _deviceService.listConnectedDevices();
       final selectedIds = options.selectedDeviceIds.toSet();
-      final installEnabled = options.installToDevices ||
-          options.platform != QuickTestPlatform.all;
-      final targetDevices = installEnabled
+      final hostInstall = options.installMode == QuickTestInstallMode.hostAdb &&
+          (options.installToDevices ||
+              options.platform != QuickTestPlatform.all);
+      final targetDevices = hostInstall
           ? (selectedIds.isEmpty
               ? allDevices.where((d) => d.available).toList()
               : allDevices
@@ -260,7 +261,11 @@ class QuickTestPipeline {
         throw StateError('iOS install requires macOS with Xcode.');
       }
 
-      if (installEnabled && targetDevices.isEmpty) {
+      if (options.installMode == QuickTestInstallMode.clientDownload) {
+        _log('Install mode: client_download — skipping host adb/flutter install');
+      }
+
+      if (hostInstall && targetDevices.isEmpty) {
         _log('No devices selected or connected — skipping install');
       }
 

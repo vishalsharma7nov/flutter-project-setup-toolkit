@@ -30,6 +30,7 @@ On macOS, `./scripts/toolkit-studio.sh` opens the **desktop app** by default. Us
 | **iOS builds** | `build_ios_ipa` — IPA (macOS) |
 | **Distribution GUI** | `build_distribution`, Distribution Studio (`/build`) — Git remote, secure env overlay |
 | **Quick Test** | Quick Test Studio (`/quick-test`) — Git URL → build → device install |
+| **Mobile Quick Test** | `studio_app` on Android/iOS — pair with Mac (`--host lan`), paste repo, install on device |
 | **Architecture audit** | `architecture_audit` — drift & import violations |
 | **macOS desktop app** | `./scripts/toolkit-studio.sh` — native shell for all studios |
 
@@ -181,7 +182,7 @@ Local dashboard at `http://127.0.0.1:8765`:
 | Hub | `/` | Project picker, create/repair, navigation |
 | Setup | `/setup` | Environments, config, architecture, API |
 | Distribution | `/build` | APK, AAB, IPA; Git remote; secure env overlay |
-| Quick Test | `/quick-test` | Git URL → build APK/IPA → install on devices |
+| Quick Test | `/quick-test` | Git URL → build APK/IPA → install on devices (Mac UI or mobile companion) |
 | Feature | `/feature` | Scaffold features |
 | Version | `/version` | Classify bump and update env keys |
 

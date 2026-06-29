@@ -11,6 +11,7 @@ import 'setup_studio_routes.dart';
 import 'version_studio_routes.dart';
 import 'studio_http.dart';
 import 'studio_hub_html.dart';
+import 'studio_bind.dart';
 import 'studio_project_api.dart';
 import 'studio_project_state.dart';
 
@@ -18,6 +19,7 @@ class ToolkitStudioServer {
   ToolkitStudioServer({
     Directory? projectRoot,
     required this.port,
+    this.bindMode = StudioBindMode.loopback,
     StudioProjectState? projectState,
     SetupStudioRoutes? setupRoutes,
     DistributionStudioRoutes? distributionRoutes,
@@ -40,6 +42,7 @@ class ToolkitStudioServer {
 
   final StudioProjectState projectState;
   final int port;
+  final StudioBindMode bindMode;
   late final SetupStudioRoutes setupRoutes;
   late final DistributionStudioRoutes distributionRoutes;
   late final FeatureStudioRoutes featureRoutes;
@@ -49,7 +52,7 @@ class ToolkitStudioServer {
   HttpServer? _server;
 
   Future<void> start() async {
-    _server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
+    _server = await HttpServer.bind(bindAddressFor(bindMode), port);
     _server!.listen((request) {
       unawaited(
         _handleRequest(request).catchError((Object e) {
