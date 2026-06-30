@@ -281,6 +281,8 @@ String setupStudioHtml() => r'''
       </div>
       <label class="toggle"><input type="checkbox" id="createEnvTemplates" checked /> Create env file templates</label>
       <label class="toggle"><input type="checkbox" id="createScripts" checked /> Create scripts/ wrappers</label>
+      <label class="toggle"><input type="checkbox" id="createCiWorkflow" /> Generate GitHub Actions CI workflow</label>
+      <p style="font-size:0.82rem;color:var(--muted);margin:-0.25rem 0 0.75rem 1.6rem">Or configure later in <a href="/ci">CI Studio</a>.</p>
       <label class="toggle"><input type="checkbox" id="scaffoldFeature" /> Scaffold a feature to start with</label>
       <div class="grid2 hidden" id="featureFields">
         <div class="field"><label for="featureName">Feature name</label><input id="featureName" placeholder="authentication" /></div>
@@ -511,6 +513,7 @@ String setupStudioHtml() => r'''
         local_toolkit_path: $("localToolkitPath").value,
         create_env_templates: $("createEnvTemplates").checked,
         create_scripts: $("createScripts").checked,
+        create_ci_workflow: $("createCiWorkflow").checked,
         state_management: $("stateManagement").value,
         feature_to_scaffold: $("scaffoldFeature").checked ? $("featureName").value : null,
         feature_base_path: $("featureBasePath").value,

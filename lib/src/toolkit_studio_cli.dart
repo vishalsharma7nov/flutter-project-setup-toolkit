@@ -21,7 +21,7 @@ Future<int> runToolkitStudio(List<String> arguments) async {
       allowed: ['loopback', 'lan'],
       defaultsTo: 'loopback',
     )
-    ..addOption('view', help: 'Deep link: setup | build | feature | version | quick-test')
+    ..addOption('view', help: 'Deep link: setup | build | feature | version | quick-test | ci | qa | docs | packages | doctor')
     ..addFlag(
       'desktop',
       negatable: false,
@@ -128,6 +128,11 @@ String _viewPathFor(String? view) {
     'feature' => '/feature',
     'version' => '/version',
     'quick-test' => '/quick-test',
+    'ci' => '/ci',
+    'qa' => '/qa',
+    'docs' => '/docs',
+    'packages' => '/packages',
+    'doctor' => '/doctor',
     _ => '/',
   };
 }

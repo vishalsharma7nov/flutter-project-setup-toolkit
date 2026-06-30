@@ -19,6 +19,7 @@ import 'api/api_packages.dart';
 import 'api/api_protocol.dart';
 import 'api/api_scaffold.dart';
 import 'architecture/architecture_guardrails.dart';
+import 'ci/ci_workflow_spec.dart';
 import 'ci/github_actions_template.dart';
 
 enum EnvPreset {
@@ -280,6 +281,7 @@ SetupPlan buildSetupPlanFromAnswers({
   required ToolkitInstallMode toolkitMode,
   required bool createEnvTemplates,
   required bool createScripts,
+  bool createCiWorkflow = false,
   String? localToolkitPath,
   String? toolkitInstallPath,
   String? featureToScaffold,
@@ -303,6 +305,7 @@ SetupPlan buildSetupPlanFromAnswers({
     toolkitMode: toolkitMode,
     createEnvTemplates: createEnvTemplates,
     createScripts: createScripts,
+    createCiWorkflow: createCiWorkflow,
     localToolkitPath: localToolkitPath,
     toolkitInstallPath: toolkitInstallPath,
     featureToScaffold: featureToScaffold,
@@ -477,6 +480,12 @@ Future<SetupPlan> collectSetupPlanInteractive({
   final createScripts = assumeYes
       ? true
       : promptYesNo('Create scripts/ wrapper scripts in your app?', defaultYes: true);
+  final createCiWorkflow = assumeYes
+      ? false
+      : promptYesNo(
+          'Generate GitHub Actions CI workflow? (or use CI Studio later)',
+          defaultYes: false,
+        );
 
   String? toolkitInstallPath;
   if (toolkitMode == ToolkitInstallMode.devDependency) {
@@ -587,6 +596,7 @@ Future<SetupPlan> collectSetupPlanInteractive({
     toolkitMode: toolkitMode,
     createEnvTemplates: createEnvTemplates,
     createScripts: createScripts,
+    createCiWorkflow: createCiWorkflow,
     localToolkitPath: localToolkitPath,
     toolkitInstallPath: toolkitInstallPath,
     featureToScaffold: featureToScaffold,
@@ -877,30 +887,34 @@ Future<SetupResult> applySetupPlan(
   }
 
   if (plan.createCiWorkflow) {
-    final workflowPath = p.join(
-      plan.projectRoot.path,
-      '.github',
-      'workflows',
-      'flutter-release.yml',
+    final config = ToolkitConfig(
+      projectRoot: plan.projectRoot,
+      environments: plan.environments,
+      versionKeys: plan.versionKeys,
+      mainDartEnvRules: plan.mainDartEnvRules,
+      build: plan.build,
+      defaultEnvironment: plan.defaultEnvironment,
+      stateManagement: plan.stateManagement,
+      architecture: plan.architecture,
+      api: plan.api,
     );
-    if (dryRun) {
-      print('Would write $workflowPath');
-    } else {
-      final config = ToolkitConfig(
-        projectRoot: plan.projectRoot,
-        environments: plan.environments,
-        versionKeys: plan.versionKeys,
-        mainDartEnvRules: plan.mainDartEnvRules,
-        build: plan.build,
-        defaultEnvironment: plan.defaultEnvironment,
-        stateManagement: plan.stateManagement,
-        architecture: plan.architecture,
-        api: plan.api,
-      );
-      final workflowFile = File(workflowPath);
-      workflowFile.parent.createSync(recursive: true);
-      workflowFile.writeAsStringSync(generateGitHubActionsWorkflow(config: config));
-      createdScripts.add(workflowPath);
+    final spec = CiWorkflowSpec.fromPreset(CiWorkflowPreset.release).copyWith(
+      defaultEnv: plan.defaultEnvironment,
+      environmentNames: plan.environments.keys.toList(),
+    );
+    final workflowFiles = generateWorkflowFiles(spec: spec, config: config);
+    for (final entry in workflowFiles.entries) {
+      final workflowPath = p.join(plan.projectRoot.path, entry.key);
+      if (dryRun) {
+        print('Would write $workflowPath');
+      } else {
+        final workflowFile = File(workflowPath);
+        workflowFile.parent.createSync(recursive: true);
+        workflowFile.writeAsStringSync(entry.value);
+        createdScripts.add(workflowPath);
+      }
+    }
+    if (!dryRun) {
       final fastlane = File(p.join(plan.projectRoot.path, 'fastlane', 'Fastfile'));
       if (!fastlane.existsSync()) {
         fastlane.parent.createSync(recursive: true);

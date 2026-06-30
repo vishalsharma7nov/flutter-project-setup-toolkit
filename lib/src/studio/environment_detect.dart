@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'studio_branding.dart';
 
+import '../ci/ci_act_installer.dart';
+import '../ci/ci_features.dart';
 import '../devices/device_service.dart';
 import '../flutter_tools.dart';
 
@@ -24,6 +26,15 @@ Future<Map<String, dynamic>> detectStudioEnvironment() async {
   final flutterInstalled = flutter != null && flutterVersion != null;
   final macos = Platform.isMacOS;
   final xcode = macos ? await _detectXcode() : {'installed': false};
+  final gitInstalled = _which('git') != null;
+  final dockerForAct =
+      ciActStudioEnabled ? await isDockerAvailableForAct() : false;
+  final ghInstalled = _which('gh') != null;
+  var ghAuthOk = false;
+  if (ghInstalled) {
+    final ghStatus = await Process.run('gh', ['auth', 'status']);
+    ghAuthOk = ghStatus.exitCode == 0;
+  }
 
   return {
     'dart': dart,
@@ -53,6 +64,11 @@ Future<Map<String, dynamic>> detectStudioEnvironment() async {
       'install_android': flutterInstalled && adbAvailable(),
       'install_ios': flutterInstalled && macos && (xcode['installed'] as bool),
       'quick_test': flutterInstalled && _which('git') != null,
+      'ci_studio': dart['installed'] as bool && gitInstalled,
+      'ci_act': ciActStudioEnabled &&
+          dockerForAct &&
+          (Platform.isMacOS || Platform.isLinux),
+      'ci_publish': ghInstalled && ghAuthOk,
     },
   };
 }

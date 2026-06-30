@@ -171,6 +171,11 @@ const _studioHubHtmlTemplate = r'''
         <h3>Add feature</h3>
         <p>Scaffold feature folders with configurable architecture and API protocol.</p>
       </a>
+      <a class="card" id="cardPackages" href="/packages">
+        <div class="card-icon">📦</div>
+        <h3>Add package</h3>
+        <p>Search pub.dev, paste a link, or install from GitHub — into your loaded project.</p>
+      </a>
       <a class="card" id="cardVersion" href="/version">
         <div class="card-icon">📈</div>
         <h3>Bump version</h3>
@@ -181,13 +186,21 @@ const _studioHubHtmlTemplate = r'''
         <h3>Project doctor</h3>
         <p>Dart/Flutter, config, env files, signing hints, and architecture audit summary.</p>
       </a>
-    </div>
-
-    <div class="soon">
-      <h2>Coming soon</h2>
-      <div class="soon-grid">
-        <span class="soon-pill">Release notes</span>
-      </div>
+      <a class="card" id="cardCi" href="/ci">
+        <div class="card-icon">🔄</div>
+        <h3>CI/CD</h3>
+        <p>Generate, test locally, and publish GitHub Actions workflows.</p>
+      </a>
+      <a class="card" id="cardQa" href="/qa">
+        <div class="card-icon">📋</div>
+        <h3>QA release notes</h3>
+        <p>Compare latest commit with previous; export QA handoff notes in multiple formats.</p>
+      </a>
+      <a class="card" id="cardDocs" href="/docs">
+        <div class="card-icon">📚</div>
+        <h3>Project documentation</h3>
+        <p>Generate README and doc/ guides — architecture, features, config, development, and testing.</p>
+      </a>
     </div>
   </div>
 
@@ -266,6 +279,11 @@ const _studioHubHtmlTemplate = r'''
       document.querySelectorAll(".card").forEach((c) => {
         if (c.id === "cardQuickTest") {
           if (!capabilities.quick_test) c.classList.add("disabled");
+          else c.classList.remove("disabled");
+          return;
+        }
+        if (c.id === "cardCi") {
+          if (!capabilities.ci_studio || !projectLoaded) c.classList.add("disabled");
           else c.classList.remove("disabled");
           return;
         }
@@ -404,6 +422,10 @@ const _studioHubHtmlTemplate = r'''
         if (card.id === "cardVersion" && !capabilities.version_bump) {
           e.preventDefault();
           alert("Git is required for version bump. Install Git and refresh.");
+        }
+        if (card.id === "cardCi" && !capabilities.ci_studio) {
+          e.preventDefault();
+          alert("Git and Dart are required for CI Studio. Install Git and refresh.");
         }
       });
     });

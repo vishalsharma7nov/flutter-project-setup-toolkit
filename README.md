@@ -26,10 +26,15 @@ On macOS, `./scripts/toolkit-studio.sh` opens the **desktop app** by default. Us
 | **Architecture scaffolding** | 15 presets, core modules, flavor mains, test mirrors, custom templates |
 | **Feature modules** | `make_feature`, Feature Studio (`/feature`) |
 | **Version bumps** | `classify_version_bump`, Version Studio (`/version`) |
+| **QA release notes** | QA Release Notes Studio (`/qa`) — commit compare & handoff exports |
 | **Android builds** | `build_android` — APK & AAB |
 | **iOS builds** | `build_ios_ipa` — IPA (macOS) |
 | **Distribution GUI** | `build_distribution`, Distribution Studio (`/build`) — Git remote, secure env overlay |
 | **Quick Test** | Quick Test Studio (`/quick-test`) — Git URL → build → device install |
+| **Package install** | Package Studio (`/packages`) — search pub.dev or paste link, install dependencies |
+| **CI Studio** | CI Studio (`/ci`) — generate, test, and publish GitHub Actions workflows |
+| **Project Docs** | Docs Studio (`/docs`) — generate README and doc/ guides for your app |
+| **Project doctor** | Doctor Studio (`/doctor`) — config, env, signing, architecture health |
 | **Mobile Quick Test** | `studio_app` on Android/iOS — pair with Mac (`--host lan`), paste repo, install on device |
 | **Architecture audit** | `architecture_audit` — drift & import violations |
 | **macOS desktop app** | `./scripts/toolkit-studio.sh` — native shell for all studios |
@@ -124,11 +129,15 @@ Shell scripts in `scripts/` are thin wrappers around Dart executables.
 
 | Command | Description |
 |---------|-------------|
-| `toolkit_studio` | Hub UI — Setup, Build, Quick Test, Feature, Version studios |
+| `toolkit_studio` | Hub UI — all studios (Setup, Build, CI, QA, Docs, …) |
 | `setup_project` | Interactive terminal setup wizard |
 | `setup_studio` | Setup Studio only (legacy; use hub) |
 | `make_feature` | Scaffold feature folders |
 | `classify_version_bump` | Semver classification from git |
+| `qa_release_notes` | QA handoff JSON/Markdown from git or codebase scan |
+| `codebase_understand` | Heuristic project scan (modules, routes, deps) |
+| `project_docs` | Generate README and `doc/` guides (CLI) |
+| `ci_studio` | Generate, test, and publish GitHub Actions workflows |
 | `build_android` | Release APK or AAB |
 | `build_ios_ipa` | Release IPA |
 | `build_distribution` | Distribution Studio GUI |
@@ -184,7 +193,12 @@ Local dashboard at `http://127.0.0.1:8765`:
 | Distribution | `/build` | APK, AAB, IPA; Git remote; secure env overlay |
 | Quick Test | `/quick-test` | Git URL → build APK/IPA → install on devices (Mac UI or mobile companion) |
 | Feature | `/feature` | Scaffold features |
+| Package | `/packages` | Search pub.dev or Git; install dependencies |
 | Version | `/version` | Classify bump and update env keys |
+| Project doctor | `/doctor` | Config, env files, signing hints, architecture audit summary |
+| CI/CD | `/ci` | Generate, test, and publish GitHub Actions workflows |
+| QA release notes | `/qa` | Compare commits; export QA handoff |
+| Project documentation | `/docs` | Generate README and `doc/` guides for your app |
 
 See [doc/toolkit-studio.md](doc/toolkit-studio.md) and [doc/studio-desktop.md](doc/studio-desktop.md).
 
@@ -223,9 +237,14 @@ dart test
 | [doc/studio-desktop.md](doc/studio-desktop.md) | macOS desktop app |
 | [doc/architecture.md](doc/architecture.md) | Presets, core modules, routing |
 | [doc/feature-scaffolding.md](doc/feature-scaffolding.md) | `make_feature` |
+| [doc/package-studio.md](doc/package-studio.md) | Package Studio (pub.dev / Git) |
 | [doc/api-layer.md](doc/api-layer.md) | API protocol config |
 | [doc/versioning.md](doc/versioning.md) | Version classification |
+| [doc/qa-release-notes.md](doc/qa-release-notes.md) | QA handoff and `codebase_understand` |
+| [doc/ci-studio.md](doc/ci-studio.md) | CI/CD workflow generation |
+| [doc/project-docs.md](doc/project-docs.md) | Docs Studio |
 | [doc/building.md](doc/building.md) | Android & iOS builds |
+| [doc/architecture-audit.md](doc/architecture-audit.md) | Architecture audit CLI |
 | [doc/configuration.md](doc/configuration.md) | Config reference |
 | [doc/multi-app-setup.md](doc/multi-app-setup.md) | Multiple apps |
 | [doc/publishing.md](doc/publishing.md) | pub.dev release |

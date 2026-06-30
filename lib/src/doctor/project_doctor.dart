@@ -156,6 +156,22 @@ ProjectDoctorReport runProjectDoctor(Directory projectRoot) {
     );
   }
 
+  final workflowsDir = Directory(p.join(projectRoot.path, '.github', 'workflows'));
+  final hasCiWorkflow = workflowsDir.existsSync() &&
+      workflowsDir
+          .listSync()
+          .any((entity) => entity is File && entity.path.endsWith('.yml'));
+  if (!hasCiWorkflow) {
+    checks.add(
+      DoctorCheck(
+        id: 'ci_workflow',
+        severity: 'info',
+        message: 'No GitHub Actions workflow in .github/workflows/',
+        fix: 'Open CI Studio (dart run :toolkit_studio --view ci)',
+      ),
+    );
+  }
+
   final androidKey = File(p.join(projectRoot.path, 'android/key.properties'));
   if (Directory(p.join(projectRoot.path, 'android')).existsSync()) {
     if (!androidKey.existsSync()) {

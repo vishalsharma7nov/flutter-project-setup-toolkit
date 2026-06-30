@@ -19,6 +19,11 @@ dart run :toolkit_studio --view build
 dart run :toolkit_studio --view feature
 dart run :toolkit_studio --view version
 dart run :toolkit_studio --view quick-test
+dart run :toolkit_studio --view ci
+dart run :toolkit_studio --view qa
+dart run :toolkit_studio --view docs
+dart run :toolkit_studio --view packages
+dart run :toolkit_studio --view doctor
 ```
 
 Default URL: `http://127.0.0.1:8765`
@@ -36,8 +41,13 @@ The hub (`/`) provides:
 | Setup flutter project | `/setup` | First-time config, architecture, API protocol |
 | Build APK & IPA | `/build` | Distribution Studio |
 | Quick Test | `/quick-test` | Git URL → build & install on devices |
+| CI/CD | `/ci` | Generate, test locally, publish GitHub Actions workflows |
 | Add feature | `/feature` | Feature scaffolding |
+| Add package | `/packages` | Search pub.dev or paste link; install dependencies |
 | Bump version | `/version` | Semver classification and env updates |
+| Project doctor | `/doctor` | Config, env files, signing hints, architecture audit summary |
+| QA release notes | `/qa` | Compare commits; export QA handoff |
+| Project documentation | `/docs` | Generate README and `doc/` guides |
 
 ## Setup Studio (`/setup`)
 
@@ -99,6 +109,23 @@ Build **Android APK/AAB** and **iOS IPA** with live logs in the browser.
 | GET/POST | `/api/distribution/config` | Studio config |
 
 See [building.md](building.md) for CLI equivalents.
+
+## CI Studio (`/ci`)
+
+Generate **GitHub Actions** workflows from `release-toolkit.config.json`, run **local smoke tests**, and **publish via pull request** only after a green test.
+
+Requires a loaded Flutter project with config. See [ci-studio.md](ci-studio.md) for presets, secrets, and act usage.
+
+```bash
+dart run :toolkit_studio --view ci --project .
+dart run :ci_studio --project . --write --test
+```
+
+## Package Studio (`/packages`)
+
+Search **pub.dev** or paste a package URL/name, preview metadata, and install into the **loaded project** with `flutter pub add` or `dart pub add` (regular or dev dependencies).
+
+Requires a loaded Flutter project from the hub. See [package-studio.md](package-studio.md).
 
 ## Quick Test Studio (`/quick-test`)
 
@@ -197,6 +224,55 @@ GUI for `classify_version_bump`:
 | POST | `/api/version/apply` | Write env file updates |
 
 Body fields: `project`, `commit` (default `HEAD`), `env`, `env_file`, `dry_run`.
+
+## QA Release Notes Studio (`/qa`)
+
+Compare **HEAD~1 → HEAD** (or **last tag → HEAD**) and export a QA handoff document.
+
+- Preview Markdown, copy to clipboard, download multiple formats
+- Summary cards: time estimate, risk, platforms, Go/No-Go
+- Audience modes: QA, PM, Executive
+- Optional GitHub compare / PR links when `gh` is available
+- Quick Test deep link for the same commit
+
+### API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/qa/compare-options?project=` | Compare range dropdown options |
+| POST | `/api/qa/preview` | Generate handoff (JSON + markdown) |
+| GET | `/api/qa/download` | Download export (`format`, `base_mode`, `audience`) |
+
+See [qa-release-notes.md](qa-release-notes.md) for formats and CI usage.
+
+## Project Doctor (`/doctor`)
+
+Health check for a loaded Flutter project — no write actions.
+
+- Dart/Flutter on PATH, `pubspec.yaml`, `lib/main.dart`
+- `release-toolkit.config.json` and env file paths
+- Android/iOS signing hints (keystore, Xcode scheme)
+- Architecture audit summary (preset drift, cross-feature imports)
+
+Works without loading a project from the hub first (enter path on the doctor page). Also used internally by Docs Studio.
+
+### API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/doctor?path=` | Run all checks; JSON report |
+
+## Project Docs Studio (`/docs`)
+
+Generate README and `doc/` guides from static analysis. See [project-docs.md](project-docs.md) for the full file list, overwrite policies, and CLI (`project_docs`).
+
+### API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/docs/detect?path=` | Scan project; list missing docs |
+| POST | `/api/docs/preview` | Preview generated files + diffs |
+| POST | `/api/docs/write` | Write documentation to disk |
 
 ## Shared hub APIs
 

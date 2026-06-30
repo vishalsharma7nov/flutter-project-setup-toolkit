@@ -67,6 +67,11 @@ On first launch the macOS app will:
 ./scripts/toolkit-studio.sh --desktop --view feature
 ./scripts/toolkit-studio.sh --desktop --view version
 ./scripts/toolkit-studio.sh --desktop --view quick-test
+./scripts/toolkit-studio.sh --desktop --view ci
+./scripts/toolkit-studio.sh --desktop --view qa
+./scripts/toolkit-studio.sh --desktop --view docs
+./scripts/toolkit-studio.sh --desktop --view packages
+./scripts/toolkit-studio.sh --desktop --view doctor
 ```
 
 See [toolkit-studio.md](toolkit-studio.md) for all studios and API routes.
@@ -102,6 +107,7 @@ See [toolkit-studio.md](toolkit-studio.md#mobile-companion-android--ios) for API
 |-------|-----|
 | `Desktop app not found at studio_app/` | Run from toolkit repo root, not from your Flutter app |
 | Blank window / "Waiting for studio server" | Ensure port 8765 is free; try `--port 8766` |
+| Folder picker closes right away | App not in front; clicked Browse twice | Focus the Toolkit window; click Browse once and wait |
 | `flutter` not found | Install Flutter and ensure it is on `PATH` |
 | WebView sandbox errors | Rebuild after entitlements change: `cd studio_app && flutter clean && flutter run -d macos` |
 

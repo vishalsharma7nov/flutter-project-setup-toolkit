@@ -3,7 +3,7 @@
 # Flutter Project Setup Toolkit — Studio hub (GUI)
 #
 # Opens the local Toolkit Studio dashboard: setup, builds, Quick Test,
-# feature scaffolding, and version bumps.
+# feature scaffolding, packages, CI, QA, docs, and version bumps.
 #
 # Run from: toolkit repo root (this file lives in scripts/).
 #
@@ -23,7 +23,7 @@
 #
 # Options (passed to dart run :toolkit_studio):
 #   --project, -p PATH   Pre-fill Flutter project in the UI
-#   --view VIEW          setup | build | feature | version | quick-test
+#   --view VIEW          setup | build | feature | version | quick-test | ci | qa | docs | packages | doctor
 #   --browser            Web UI instead of macOS desktop app
 #   --desktop            Force macOS desktop app
 #   --host HOST          loopback (default) or lan (mobile companion)

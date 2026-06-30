@@ -36,9 +36,10 @@ dart run flutter_project_setup_toolkit:setup_project --project .
 9. **Architecture preset** — 15 layout presets (terminal) or full picker in Setup Studio
 10. **API protocol** — REST, gRPC, GraphQL, external SDK, etc.
 11. **Scaffolding** — create env templates and `scripts/` wrappers
-12. **Bootstrap options** (Setup Studio) — core modules, flavor mains, test mirror
-13. **Feature to work on (optional)** — scaffold a clean-architecture folder
-14. **Auto-install** — adds `flutter_project_setup_toolkit` to `pubspec.yaml` or activates global CLI
+12. **CI workflow (optional)** — generate GitHub Actions workflow, or use [CI Studio](ci-studio.md) later
+13. **Bootstrap options** (Setup Studio) — core modules, flavor mains, test mirror
+14. **Feature to work on (optional)** — scaffold a clean-architecture folder
+15. **Auto-install** — adds `flutter_project_setup_toolkit` to `pubspec.yaml` or activates global CLI
 
 After all questions, a **review screen** lets you apply, change individual settings, or cancel.
 
@@ -56,6 +57,7 @@ After all questions, a **review screen** lets you apply, change individual setti
 | `scripts/setup-studio.sh` | Setup Studio GUI (legacy; hub preferred) |
 | `scripts/build-distribution.sh` | Distribution Studio GUI |
 | `scripts/make-feature.sh` | Feature scaffold |
+| `.github/workflows/*.yml` | When CI workflow generation is enabled (or use CI Studio) |
 | `scripts/rtk-locate.sh` | Only when using a local toolkit clone |
 | `pubspec.yaml` dev dependency | When using dev dependency mode |
 

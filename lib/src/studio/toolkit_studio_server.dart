@@ -2,11 +2,15 @@ import 'dart:async';
 import 'dart:io';
 
 import '../setup/setup_studio_service.dart';
+import 'docs_studio_routes.dart';
+import 'ci_studio_routes.dart';
 import 'doctor_studio_routes.dart';
 import 'distribution_studio_routes.dart';
 import 'environment_detect.dart';
 import 'feature_studio_routes.dart';
 import 'quick_test_studio_routes.dart';
+import 'package_studio_routes.dart';
+import 'qa_studio_routes.dart';
 import 'setup_studio_routes.dart';
 import 'version_studio_routes.dart';
 import 'studio_http.dart';
@@ -26,6 +30,10 @@ class ToolkitStudioServer {
     FeatureStudioRoutes? featureRoutes,
     VersionStudioRoutes? versionRoutes,
     QuickTestStudioRoutes? quickTestRoutes,
+    CiStudioRoutes? ciRoutes,
+    QaStudioRoutes? qaRoutes,
+    DocsStudioRoutes? docsRoutes,
+    PackageStudioRoutes? packageRoutes,
   }) : projectState = projectState ?? StudioProjectState() {
     this.projectState.setInitial(projectRoot);
     this.setupRoutes =
@@ -38,6 +46,11 @@ class ToolkitStudioServer {
         versionRoutes ?? VersionStudioRoutes(projectState: this.projectState);
     this.quickTestRoutes =
         quickTestRoutes ?? QuickTestStudioRoutes();
+    this.ciRoutes = ciRoutes ?? CiStudioRoutes();
+    this.qaRoutes = qaRoutes ?? QaStudioRoutes(projectState: this.projectState);
+    this.docsRoutes = docsRoutes ?? DocsStudioRoutes();
+    this.packageRoutes =
+        packageRoutes ?? PackageStudioRoutes(projectState: this.projectState);
   }
 
   final StudioProjectState projectState;
@@ -48,6 +61,10 @@ class ToolkitStudioServer {
   late final FeatureStudioRoutes featureRoutes;
   late final VersionStudioRoutes versionRoutes;
   late final QuickTestStudioRoutes quickTestRoutes;
+  late final CiStudioRoutes ciRoutes;
+  late final QaStudioRoutes qaRoutes;
+  late final DocsStudioRoutes docsRoutes;
+  late final PackageStudioRoutes packageRoutes;
 
   HttpServer? _server;
 
@@ -113,6 +130,10 @@ class ToolkitStudioServer {
     if (await featureRoutes.handle(request)) return;
     if (await versionRoutes.handle(request)) return;
     if (await quickTestRoutes.handle(request)) return;
+    if (await ciRoutes.handle(request)) return;
+    if (await qaRoutes.handle(request)) return;
+    if (await docsRoutes.handle(request)) return;
+    if (await packageRoutes.handle(request)) return;
     if (await handleDoctorRoutes(request)) return;
 
     StudioHttp.respondJson(request.response, 404, {

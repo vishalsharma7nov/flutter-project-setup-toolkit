@@ -18,8 +18,12 @@ Common issues when using Flutter Project Setup Toolkit.
 | Blank page / connection refused | Server not running | Run `dart run :toolkit_studio` from toolkit repo |
 | Port in use | Another process on 8765 | `dart run :toolkit_studio --port 8767` |
 | macOS desktop blank | Server slow to start | Wait or use `--browser` |
+| Folder picker cancels immediately | App behind terminal / double-click Browse | Click the Toolkit window first; wait for one picker dialog |
 | Studio changes not visible | HTML cached | Restart `dart run :toolkit_studio` after toolkit updates |
 | `Desktop app not found` | Wrong working directory | Run from toolkit repo root where `studio_app/` exists |
+| Studio stuck on loading (45s) | `/api/environment` failing | Restart studio; if Docker is not installed, update toolkit (older builds crashed env detect) |
+| `path` dependency not found | Wrong toolkit folder in `pubspec.yaml` | Use `flutter-project-setup-toolkit`, not `flutter-release-toolkit` |
+| Folder picker cancels immediately | App behind terminal / double-click Browse | Focus the Toolkit window; click Browse once and wait |
 
 ## Setup
 

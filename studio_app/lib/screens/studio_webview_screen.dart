@@ -37,10 +37,17 @@ class _StudioWebViewScreenState extends State<StudioWebViewScreen> {
         'feature' => '/feature',
         'version' => '/version',
         'quick-test' => '/quick-test',
+        'ci' => '/ci',
+        'qa' => '/qa',
+        'docs' => '/docs',
+        'packages' => '/packages',
+        'doctor' => '/doctor',
         _ => '/',
       };
 
-  bool get _skipProjectRegistration => widget.initialView == 'quick-test';
+  bool get _skipProjectRegistration =>
+      widget.initialView == 'quick-test' ||
+      (widget.initialView == 'doctor' && widget.projectPath.isEmpty);
 
   @override
   void initState() {
@@ -97,7 +104,7 @@ class _StudioWebViewScreenState extends State<StudioWebViewScreen> {
           _ready = true;
           _status = '';
         });
-        studioLog('WebView: ready (quick-test, no project context)');
+        studioLog('WebView: ready (${widget.initialView}, no project context)');
       }
       return;
     }

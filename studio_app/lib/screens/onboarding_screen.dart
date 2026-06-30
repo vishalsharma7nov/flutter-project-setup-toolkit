@@ -67,10 +67,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _pickProjectFolder() async {
-    studioLog('Onboarding: opening folder picker');
-    final path = await getDirectoryPath(confirmButtonText: 'Select project folder');
+    if (_working) return;
+    setState(() => _working = true);
+    String? path;
+    try {
+      studioLog('Onboarding: opening folder picker');
+      path = await getDirectoryPath(confirmButtonText: 'Select project folder');
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
     if (path == null || path.isEmpty) {
       studioLog('Onboarding: folder picker cancelled');
+      if (mounted) {
+        _showMessage(
+          'Folder selection was cancelled. If no dialog appeared, click the app window and try Browse again.',
+        );
+      }
       return;
     }
     studioLog('Onboarding: selected folder $path');
@@ -547,7 +559,14 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   }
 
   Future<void> _pickParent() async {
-    final picked = await getDirectoryPath(confirmButtonText: 'Select parent folder');
+    if (_creating) return;
+    setState(() => _creating = true);
+    String? picked;
+    try {
+      picked = await getDirectoryPath(confirmButtonText: 'Select parent folder');
+    } finally {
+      if (mounted) setState(() => _creating = false);
+    }
     if (picked != null) setState(() => _parentPath = picked);
   }
 

@@ -4,8 +4,15 @@ All notable changes to **flutter_project_setup_toolkit**.
 
 ## Unreleased
 
+## 0.2.0 — 2026-06-30
+
 ### Added
 
+- **CI Studio** — `/ci` GUI and `ci_studio` CLI: GitHub Actions workflow generation, local act tests, PR publish
+- **QA Release Notes Studio** — `/qa` GUI and `qa_release_notes` CLI; `codebase_understand` for heuristic scans
+- **Package Studio** — `/packages` GUI: pub.dev search, Git URL validation, `flutter pub add`
+- **Project Docs Studio** — `/docs` GUI and `project_docs` CLI: generate README and `doc/` guides
+- **Project Doctor** — `/doctor` GUI: config, env, signing, and architecture health checks
 - **Phase 7 — Architecture backlog**
   - Core module stubs (`errors`, `logging`, `theme`, `connectivity`) under `lib/core/`
   - Flavor entrypoints (`main_<env>.dart`) from setup environments
@@ -21,7 +28,7 @@ All notable changes to **flutter_project_setup_toolkit**.
 - **Feature Studio** — external SDK fields, save config API
 - **Toolkit Studio hub** — unified project picker and studio navigation
 - **macOS desktop app** — native shell for Toolkit Studio
-- Documentation: [doc/architecture.md](doc/architecture.md), [doc/toolkit-studio.md](doc/toolkit-studio.md), [doc/architecture-audit.md](doc/architecture-audit.md), and more
+- Documentation: [doc/ci-studio.md](doc/ci-studio.md), [doc/qa-release-notes.md](doc/qa-release-notes.md), [doc/package-studio.md](doc/package-studio.md), [doc/project-docs.md](doc/project-docs.md), [doc/architecture.md](doc/architecture.md), [doc/toolkit-studio.md](doc/toolkit-studio.md), [doc/architecture-audit.md](doc/architecture-audit.md), and more
 
 ### Changed
 
