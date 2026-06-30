@@ -176,13 +176,17 @@ See [toolkit-studio.md](toolkit-studio.md#distribution-studio-build) for GUI fea
 
 ## Quick Test Studio (GUI)
 
-For the fastest path from a **public or private Git repo** to a device build (Flutter **app or plugin**):
+For the fastest path from a **local project folder** or **Git repo** to a device build (Flutter **app or plugin**):
 
 ```bash
 dart run :toolkit_studio --view quick-test
 ```
 
-1. Paste the Git URL and click **Check repo**
+**Local folder (default):** click **Browse…** or enter the project path, then **Check project**.
+
+**Git URL:** switch to Git mode, paste the URL, and click **Check repo**.
+
+1. Choose source (local folder or Git) and validate
 2. Provide env secrets only if the app requires dart-defines (optional for plain Flutter apps)
 3. Select connected devices (optional)
 4. Click **Run quick test**

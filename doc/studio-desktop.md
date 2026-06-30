@@ -108,6 +108,7 @@ See [toolkit-studio.md](toolkit-studio.md#mobile-companion-android--ios) for API
 | `Desktop app not found at studio_app/` | Run from toolkit repo root, not from your Flutter app |
 | Blank window / "Waiting for studio server" | Ensure port 8765 is free; try `--port 8766` |
 | Folder picker closes right away | App not in front; clicked Browse twice | Focus the Toolkit window; click Browse once and wait |
+| Folder picker missing (Linux) | No zenity/kdialog | `sudo apt install zenity` or type path manually |
 | `flutter` not found | Install Flutter and ensure it is on `PATH` |
 | WebView sandbox errors | Rebuild after entitlements change: `cd studio_app && flutter clean && flutter run -d macos` |
 

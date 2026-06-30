@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import '../env/env_source.dart';
-import '../git/git_remote_source.dart';
 import '../quick_test/quick_test_models.dart';
+import '../quick_test/quick_test_source.dart';
 import '../quick_test/quick_test_pipeline.dart';
 import '../quick_test/quick_test_ui_html.dart';
 import 'studio_http.dart';
@@ -123,7 +123,7 @@ class QuickTestStudioRoutes {
           payload['env_source'] as Map<String, dynamic>,
         );
       }
-      final source = GitRemoteSource.fromJson(sourceJson);
+      final source = QuickTestSource.fromJson(sourceJson);
       final result = await runQuickTestPreflight(
         source: source,
         envName: env,
@@ -161,7 +161,7 @@ class QuickTestStudioRoutes {
           payload['env_source'] as Map<String, dynamic>,
         );
       }
-      final source = GitRemoteSource.fromJson(sourceJson);
+      final source = QuickTestSource.fromJson(sourceJson);
       final options = QuickTestRunOptions.fromJson(payload);
 
       runInProgress = true;

@@ -4,6 +4,7 @@ import 'package:flutter_project_setup_toolkit/src/devices/device_service.dart';
 import 'package:flutter_project_setup_toolkit/src/git/git_clone_service.dart';
 import 'package:flutter_project_setup_toolkit/src/git/git_remote_source.dart';
 import 'package:flutter_project_setup_toolkit/src/quick_test/quick_test_pipeline.dart';
+import 'package:flutter_project_setup_toolkit/src/quick_test/quick_test_source.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -58,7 +59,9 @@ environment:
 
       await expectLater(
         runQuickTestPreflight(
-          source: const GitRemoteSource(url: 'https://example.com/repo.git'),
+          source: const QuickTestSource.git(
+            GitRemoteSource(url: 'https://example.com/repo.git'),
+          ),
           envName: 'dev',
           gitClone: _FakeGitClone(tempDir),
           deviceService: _FakeDeviceService(const []),
@@ -97,7 +100,9 @@ dependencies:
       File(p.join(tempDir.path, '.env', 'dev.env')).writeAsStringSync('API_BASE_URL=https://api.test\n');
 
       final result = await runQuickTestPreflight(
-        source: const GitRemoteSource(url: 'https://example.com/repo.git'),
+        source: const QuickTestSource.git(
+          GitRemoteSource(url: 'https://example.com/repo.git'),
+        ),
         envName: 'dev',
         gitClone: _FakeGitClone(tempDir),
         deviceService: _FakeDeviceService(const [
@@ -129,7 +134,9 @@ dependencies:
       Directory(p.join(tempDir.path, 'ios')).createSync();
 
       final result = await runQuickTestPreflight(
-        source: const GitRemoteSource(url: 'https://example.com/repo.git'),
+        source: const QuickTestSource.git(
+          GitRemoteSource(url: 'https://example.com/repo.git'),
+        ),
         envName: 'dev',
         gitClone: _FakeGitClone(tempDir),
         deviceService: _FakeDeviceService(const []),
@@ -138,6 +145,31 @@ dependencies:
       expect(result['flutter_ok'], isTrue);
       expect(result['env_ready'], isFalse);
       expect(result['can_run_without_env'], isTrue);
+    });
+
+    test('preflight accepts local project path', () async {
+      File(p.join(tempDir.path, 'pubspec.yaml')).writeAsStringSync('''
+name: sample_app
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+''');
+      Directory(p.join(tempDir.path, 'lib')).createSync();
+      File(p.join(tempDir.path, 'lib', 'main.dart')).writeAsStringSync('void main() {}');
+      Directory(p.join(tempDir.path, 'android')).createSync();
+      Directory(p.join(tempDir.path, 'ios')).createSync();
+
+      final result = await runQuickTestPreflight(
+        source: QuickTestSource.local(tempDir.path),
+        envName: 'dev',
+        deviceService: _FakeDeviceService(const []),
+      );
+
+      expect(result['flutter_ok'], isTrue);
+      expect(result['work_dir'], tempDir.path);
+      expect(result['source'], {'type': 'local', 'path': tempDir.path});
     });
   });
 }

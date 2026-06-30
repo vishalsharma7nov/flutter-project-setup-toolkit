@@ -1,6 +1,6 @@
 # Toolkit Studio
 
-**Toolkit Studio** is a local web dashboard (and optional macOS desktop app) that unifies project setup, distribution builds, quick test from Git, feature scaffolding, and version bumping.
+**Toolkit Studio** is a local web dashboard (and optional macOS desktop app) that unifies project setup, distribution builds, Quick Test, feature scaffolding, package install, CI/CD generation, QA handoff, project docs, version bumping, and project health checks.
 
 ```bash
 # From toolkit repo root
@@ -32,7 +32,7 @@ Default URL: `http://127.0.0.1:8765`
 
 The hub (`/`) provides:
 
-- **Project picker** — load, analyze, repair, or create a Flutter project
+- **Project picker** — load, analyze, repair, or create a Flutter project; **Browse…** opens the native folder picker on macOS, Windows, and Linux (zenity/kdialog)
 - **Environment bar** — Dart, Flutter, and Xcode detection
 - **Studio cards** — navigate to each workflow
 
@@ -129,9 +129,16 @@ Requires a loaded Flutter project from the hub. See [package-studio.md](package-
 
 ## Quick Test Studio (`/quick-test`)
 
-Paste a **Git repository URL** for a Flutter **app or plugin**, validate it, build **APK** and (on macOS) **TestFlight IPA**, and **install on connected devices** when possible. **Plugins** are built and installed through their **`example/`** app automatically.
+Build from a **local Flutter project folder** on this machine **or** paste a **Git repository URL** for a Flutter **app or plugin**. Validate, build **APK** and (on macOS) **TestFlight IPA**, and **install on connected devices** when possible. **Plugins** are built through their **`example/`** app automatically.
 
-No local project checkout is required — Quick Test works from the hub without loading a project folder first.
+### Source modes
+
+| Mode | Use when |
+|------|----------|
+| **Local folder** (default) | Project already on disk — use **Browse…** or type the path |
+| **Git URL** | Clone remote repo (branch, subdirectory, SSH / HTTPS / token) |
+
+No hub project load is required — Quick Test works standalone from `/quick-test`.
 
 ### Features
 
@@ -227,13 +234,14 @@ Body fields: `project`, `commit` (default `HEAD`), `env`, `env_file`, `dry_run`.
 
 ## QA Release Notes Studio (`/qa`)
 
-Compare **HEAD~1 → HEAD** (or **last tag → HEAD**) and export a QA handoff document.
+Compare **HEAD~1 → HEAD** (or **last tag → HEAD**) and export a QA handoff document. When git history is missing or too short, Toolkit **automatically falls back** to a **codebase scan** (or choose **Codebase scan** explicitly).
 
 - Preview Markdown, copy to clipboard, download multiple formats
-- Summary cards: time estimate, risk, platforms, Go/No-Go
+- Summary cards: source (`git` vs `codebase`), time estimate, risk, platforms, Go/No-Go
 - Audience modes: QA, PM, Executive
 - Optional GitHub compare / PR links when `gh` is available
 - Quick Test deep link for the same commit
+- `codebase_understand` CLI for a lightweight purpose scan without full handoff
 
 ### API endpoints
 
@@ -278,11 +286,12 @@ Generate README and `doc/` guides from static analysis. See [project-docs.md](pr
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/environment` | Dart/Flutter/Xcode capabilities |
+| GET | `/api/environment` | Dart/Flutter/Xcode capabilities (`capabilities.pick_folder`, `ci_publish`, …) |
 | GET | `/api/bootstrap` | Current project path |
 | POST | `/api/project` | Set active project |
 | GET | `/api/project/analyze?path=` | Structure analysis |
 | POST | `/api/project/create` | `flutter create` new project |
+| GET/POST | `/api/pick-folder` | Native OS folder picker (`initial` / `initial_path`); returns `{path}` or `{cancelled:true}` |
 
 ## macOS desktop app
 

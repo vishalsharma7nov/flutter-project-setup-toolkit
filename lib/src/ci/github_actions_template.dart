@@ -2,8 +2,8 @@ import '../config.dart';
 import 'ci_workflow_paths.dart';
 import 'ci_workflow_spec.dart';
 
-/// Generates workflow YAML files for the given spec and project config.
-Map<String, String> generateWorkflowFiles({
+/// Generates GitHub Actions workflow YAML files for the given spec and project config.
+Map<String, String> generateGitHubWorkflowFiles({
   required CiWorkflowSpec spec,
   required ToolkitConfig config,
 }) {
@@ -37,7 +37,7 @@ String generateGitHubActionsWorkflow({
         defaultEnv: config.defaultEnvironment ?? 'dev',
         environmentNames: config.environments.keys.toList(),
       );
-  final files = generateWorkflowFiles(spec: effective, config: config);
+  final files = generateGitHubWorkflowFiles(spec: effective, config: config);
   return files.values.first;
 }
 

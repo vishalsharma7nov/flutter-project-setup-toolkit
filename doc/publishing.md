@@ -32,8 +32,14 @@ git push -u origin main
 ### 4. Tag releases
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+Create a GitHub release from the tag (optional):
+
+```bash
+gh release create v0.2.0 --title "v0.2.0" --notes-file CHANGELOG.md
 ```
 
 Consumers can depend via git:
@@ -43,7 +49,7 @@ dev_dependencies:
   flutter_project_setup_toolkit:
     git:
       url: https://github.com/vishalsharma7nov/flutter-project-setup-toolkit.git
-      ref: v0.1.0
+      ref: v0.2.0
 ```
 
 ### 5. GitHub project README
@@ -112,7 +118,7 @@ Or as a dev dependency:
 
 ```yaml
 dev_dependencies:
-  flutter_project_setup_toolkit: ^0.1.0
+  flutter_project_setup_toolkit: ^0.2.0
 ```
 
 ## See also

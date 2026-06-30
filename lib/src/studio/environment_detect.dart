@@ -4,6 +4,7 @@ import 'studio_branding.dart';
 
 import '../ci/ci_act_installer.dart';
 import '../ci/ci_features.dart';
+import 'native_folder_picker.dart';
 import '../devices/device_service.dart';
 import '../flutter_tools.dart';
 
@@ -63,7 +64,8 @@ Future<Map<String, dynamic>> detectStudioEnvironment() async {
       'build_ios': flutterInstalled && macos && (xcode['installed'] as bool),
       'install_android': flutterInstalled && adbAvailable(),
       'install_ios': flutterInstalled && macos && (xcode['installed'] as bool),
-      'quick_test': flutterInstalled && _which('git') != null,
+      'quick_test': flutterInstalled,
+      'pick_folder': nativeFolderPickerAvailable(),
       'ci_studio': dart['installed'] as bool && gitInstalled,
       'ci_act': ciActStudioEnabled &&
           dockerForAct &&

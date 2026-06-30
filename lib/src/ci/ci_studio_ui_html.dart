@@ -83,13 +83,15 @@ String ciStudioHtml() => r'''
       max-height: 280px; overflow: auto; white-space: pre-wrap;
     }
     .status { font-size: 0.85rem; color: var(--muted); }
+    .provider-desc { font-size: 0.85rem; color: var(--muted); margin: 0.5rem 0 0.75rem; }
+    .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin-top: 0.5rem; }
     a { color: var(--teal); }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>CI Studio</h1>
-    <p class="subtitle">Generate GitHub Actions workflows, test locally, then publish via pull request.</p>
+    <p class="subtitle">Generate CI/CD pipelines for major platforms, test locally, then publish.</p>
 
     <div class="steps">
       <span class="step-pill active" id="pill1">1 Configure</span>
@@ -110,6 +112,17 @@ String ciStudioHtml() => r'''
         <div id="devopsRequirements"></div>
         <div id="costWarnings" class="warn-box hidden"></div>
         <p id="actHint" class="status hidden" style="margin-top:0.5rem"></p>
+      </div>
+      <div class="panel">
+        <h2>CI/CD provider</h2>
+        <label for="ciProvider">Platform</label>
+        <select id="ciProvider"></select>
+        <p id="providerDesc" class="provider-desc"></p>
+        <p class="status">Docs: <a id="providerDocs" href="#" target="_blank">—</a></p>
+        <div id="providerConfig" class="config-grid hidden"></div>
+        <p id="splitHint" class="status hidden" style="margin-top:0.5rem;color:var(--warn)">
+          Split CI + release is GitHub Actions only — other providers use a single config file.
+        </p>
       </div>
       <div class="panel">
         <h2>Preset</h2>
@@ -158,8 +171,8 @@ String ciStudioHtml() => r'''
     <section id="step2" class="hidden">
       <div class="panel">
         <h2>Write locally</h2>
-        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem">
-          Saves workflow files under <code>.github/workflows/</code> — nothing is pushed until step 3.
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem" id="writeHint">
+          Saves pipeline config locally — nothing is pushed until step 3.
         </p>
         <button type="button" id="writeBtn">Save workflow locally</button>
         <p id="writeResult" class="status" style="margin-top:0.75rem"></p>
@@ -185,11 +198,11 @@ String ciStudioHtml() => r'''
         <ul id="secretsList" style="font-size:0.88rem;line-height:1.6"></ul>
       </div>
       <div class="panel">
-        <h2>Publish to GitHub</h2>
-        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem">
-          Requires a passing local test. Opens a pull request with the workflow — never auto-pushes without your click.
+        <h2 id="publishTitle">Publish</h2>
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem" id="publishHint">
+          Requires a passing local test. Commits and pushes pipeline config to your remote.
         </p>
-        <button type="button" id="publishBtn" disabled>Publish to GitHub</button>
+        <button type="button" id="publishBtn" disabled>Publish</button>
         <p id="publishResult" class="status" style="margin-top:0.75rem"></p>
         <div id="publishSuccess" class="success-banner hidden" style="margin-top:0.75rem"></div>
         <div class="row" style="margin-top:0.75rem">
@@ -201,6 +214,8 @@ String ciStudioHtml() => r'''
 
   <script>
     let detectData = {};
+    let providers = [];
+    let currentProvider = null;
     let lastTestPassed = false;
     let logOffset = 0;
     let pollTimer = null;
@@ -219,8 +234,18 @@ String ciStudioHtml() => r'''
       });
     }
 
+    function collectProviderConfig() {
+      const cfg = {};
+      document.querySelectorAll("[data-provider-field]").forEach((el) => {
+        if (el.value?.trim()) cfg[el.dataset.providerField] = el.value.trim();
+      });
+      return cfg;
+    }
+
     function collectSpec() {
       return {
+        provider: $("ciProvider").value,
+        provider_config: collectProviderConfig(),
         preset: $("preset").value,
         pipeline_mode: document.querySelector('input[name="pipeline"]:checked').value,
         analyze: $("jobAnalyze").checked,
@@ -284,9 +309,78 @@ String ciStudioHtml() => r'''
         renderDevOpsTier("Optional", s.optional, "optional");
     }
 
+    function selectedProviderInfo() {
+      const id = $("ciProvider").value;
+      return providers.find((p) => p.id === id) || providers[0];
+    }
+
+    function renderProviderConfig(info) {
+      const box = $("providerConfig");
+      const fields = info?.config_fields || [];
+      if (!fields.length) {
+        box.innerHTML = "";
+        box.classList.add("hidden");
+        return;
+      }
+      box.innerHTML = fields.map((f) => {
+        const id = "cfg_" + f.id;
+        const val = detectData.default_spec?.provider_config?.[f.id] ?? f.default_value ?? "";
+        return `<div><label for="${id}">${f.label}</label>`
+          + `<input id="${id}" data-provider-field="${f.id}" type="text" value="${val}" placeholder="${f.placeholder || ""}" />`
+          + (f.help ? `<p class="status" style="margin-top:0.25rem">${f.help}</p>` : "")
+          + `</div>`;
+      }).join("");
+      box.classList.remove("hidden");
+    }
+
+    function syncProviderUi() {
+      const info = selectedProviderInfo();
+      if (!info) return;
+      currentProvider = info;
+      $("providerDesc").textContent = info.description || "";
+      $("providerDocs").href = info.docs_url || "#";
+      $("providerDocs").textContent = info.label + " documentation";
+      renderProviderConfig(info);
+      const splitSupported = info.supports_split_pipeline === true;
+      document.querySelectorAll('input[name="pipeline"]').forEach((el) => {
+        el.disabled = !splitSupported && el.value === "split";
+      });
+      if (!splitSupported) {
+        document.querySelector('input[name="pipeline"][value="single"]').checked = true;
+      }
+      $("splitHint").classList.toggle("hidden", splitSupported);
+      const paths = (info.output_paths || []).join(", ");
+      $("writeHint").textContent = "Saves " + (paths || "pipeline config") + " locally — nothing is pushed until step 3.";
+      if (info.supports_gh_publish) {
+        $("publishTitle").textContent = "Publish to GitHub";
+        $("publishHint").textContent = "Requires a passing local test. Opens a pull request via gh CLI.";
+        $("publishBtn").textContent = "Publish to GitHub";
+      } else {
+        $("publishTitle").textContent = "Publish to git remote";
+        $("publishHint").textContent = "Requires a passing local test. Commits and pushes — configure secrets in " + info.label + " UI afterward.";
+        $("publishBtn").textContent = "Commit and push";
+      }
+    }
+
+    function renderProviders(list) {
+      providers = list || [];
+      const sel = $("ciProvider");
+      sel.innerHTML = providers.map((p) =>
+        `<option value="${p.id}">${p.label}</option>`
+      ).join("");
+      const detected = detectData.detected_provider || detectData.default_spec?.provider;
+      if (detected) sel.value = detected;
+      if (!sel.dataset.bound) {
+        sel.addEventListener("change", syncProviderUi);
+        sel.dataset.bound = "1";
+      }
+      syncProviderUi();
+    }
+
     async function loadDetect() {
       const path = await projectPath();
       detectData = await api("/api/ci/detect?path=" + encodeURIComponent(path));
+      renderProviders(detectData.providers || []);
       renderDevOpsSetup(detectData.devops_setup);
       syncActUi(detectData.features?.act === true);
       if (detectData.default_spec) {
@@ -458,9 +552,11 @@ String ciStudioHtml() => r'''
         });
         $("publishResult").innerHTML = data.pr_url
           ? `Pull request: <a href="${data.pr_url}" target="_blank">${data.pr_url}</a>`
-          : "Published";
+          : (data.branch ? `Pushed branch <code>${data.branch}</code>` : "Published");
         const success = $("publishSuccess");
-        let html = "Workflow published. Add GitHub secrets before enabling store upload.";
+        let html = data.manual_next_steps?.length
+          ? "<strong>Next steps</strong><ul style='margin:0.5rem 0 0 1rem'>" + data.manual_next_steps.map((s) => `<li>${s}</li>`).join("") + "</ul>"
+          : "Workflow published. Add secrets before enabling store upload.";
         if (data.readme_badge) {
           html += `<br><br><strong>README badge</strong><pre style="margin-top:0.35rem;background:#050810;padding:0.5rem;border-radius:6px">${data.readme_badge}</pre>`;
         }
@@ -472,7 +568,10 @@ String ciStudioHtml() => r'''
         }
         success.innerHTML = html;
         success.classList.remove("hidden");
-        $("successBox").textContent = "Publish complete — configure secrets in GitHub Settings.";
+        const providerLabel = currentProvider?.label || "your CI provider";
+        $("successBox").textContent = data.pr_url
+          ? "Publish complete — configure secrets in GitHub Settings."
+          : `Publish complete — configure variables in ${providerLabel}.`;
         $("successBox").classList.remove("hidden");
       } catch (e) {
         showAlert(e.message);

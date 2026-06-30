@@ -25,6 +25,8 @@ class StudioHttp {
     response
       ..statusCode = HttpStatus.ok
       ..headers.contentType = ContentType.html
+      ..headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+      ..headers.set('Pragma', 'no-cache')
       ..write(html);
   }
 }

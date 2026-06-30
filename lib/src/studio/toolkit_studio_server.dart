@@ -125,6 +125,12 @@ class ToolkitStudioServer {
       return;
     }
 
+    if ((request.method == 'POST' || request.method == 'GET') &&
+        path == '/api/pick-folder') {
+      await handleStudioPickFolder(request);
+      return;
+    }
+
     if (await setupRoutes.handle(request)) return;
     if (await distributionRoutes.handle(request)) return;
     if (await featureRoutes.handle(request)) return;

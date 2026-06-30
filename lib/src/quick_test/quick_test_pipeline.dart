@@ -7,7 +7,7 @@ import '../distribution/distribution_models.dart';
 import '../distribution/distribution_preflight.dart';
 import '../env/env_source.dart';
 import '../git/git_clone_service.dart';
-import '../git/git_remote_source.dart';
+import 'quick_test_source.dart';
 import '../ios_xcode.dart';
 import '../studio/flutter_project_structure.dart';
 import 'quick_test_models.dart';
@@ -70,15 +70,13 @@ Future<Map<String, dynamic>> _quickTestContext({
 }
 
 Future<Map<String, dynamic>> runQuickTestPreflight({
-  required GitRemoteSource source,
+  required QuickTestSource source,
   required String envName,
   EnvSourceRequest? envSource,
   GitCloneService? gitClone,
   DeviceService? deviceService,
 }) async {
-  final service = gitClone ?? GitCloneService();
-  await service.verifyAccess(source);
-  final root = await service.cloneOrUpdate(source);
+  final root = await source.resolve(gitClone: gitClone);
 
   final ctx = await _quickTestContext(
     repoRoot: root,
@@ -154,7 +152,7 @@ class QuickTestPipeline {
   }
 
   Future<void> run({
-    required GitRemoteSource source,
+    required QuickTestSource source,
     required String envName,
     EnvSourceRequest? envSource,
     QuickTestRunOptions options = const QuickTestRunOptions(),
@@ -169,9 +167,10 @@ class QuickTestPipeline {
 
     ResolvedBuildEnv? resolvedEnv;
     try {
-      _log('--- Quick Test: clone & validate ---');
-      await _gitClone.verifyAccess(source);
-      final repoRoot = await _gitClone.cloneOrUpdate(source);
+      _log(source.isLocal
+          ? '--- Quick Test: validate local project ---'
+          : '--- Quick Test: clone & validate ---');
+      final repoRoot = await source.resolve(gitClone: _gitClone);
       final ctx = await _quickTestContext(
         repoRoot: repoRoot,
         envName: envName,

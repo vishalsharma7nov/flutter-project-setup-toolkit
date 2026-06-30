@@ -4,6 +4,12 @@ All notable changes to **flutter_project_setup_toolkit**.
 
 ## Unreleased
 
+### Added
+
+- **Native folder picker** — `/api/pick-folder` on macOS, Windows, and Linux (zenity/kdialog); hub and Quick Test **Browse…**
+- **Quick Test local folder** — build from a project on disk without cloning Git
+- **Multi-provider CI** — GitLab CI, Codemagic, CircleCI, Azure Pipelines, Bitbucket Pipelines templates in CI Studio
+
 ## 0.2.0 — 2026-06-30
 
 ### Added

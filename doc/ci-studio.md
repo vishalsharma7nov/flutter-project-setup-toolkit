@@ -1,6 +1,6 @@
 # CI Studio
 
-CI Studio generates GitHub Actions workflows from your `release-toolkit.config.json`, runs local smoke tests, and publishes to GitHub only after a green test.
+CI Studio generates CI/CD pipelines for major platforms from your `release-toolkit.config.json`, runs local smoke tests, and publishes after a green test.
 
 ## Quick start
 
@@ -67,11 +67,24 @@ dart run :ci_studio --project . --write --test
 
 CI Studio **DevOps setup** panel in `/ci` shows Required / Publish / Recommended checks live for your project.
 
+## Supported CI/CD providers
+
+| Provider | Output file(s) | Publish |
+|----------|----------------|---------|
+| **GitHub Actions** | `.github/workflows/flutter-ci.yml`, `flutter-release.yml` | PR via `gh` |
+| **GitLab CI** | `.gitlab-ci.yml` | Commit + push |
+| **Codemagic** | `codemagic.yaml` | Commit + push |
+| **CircleCI** | `.circleci/config.yml` | Commit + push |
+| **Azure Pipelines** | `azure-pipelines.yml` | Commit + push |
+| **Bitbucket Pipelines** | `bitbucket-pipelines.yml` | Commit + push |
+
+Select the provider in CI Studio step 1. Provider-specific options (Docker image, VM size, instance type) appear under **CI/CD provider**. Split CI + release workflows are **GitHub Actions only**; other providers use a single config file.
+
 ## Workflow
 
-1. **Configure** — pick a preset (PR checks, release, full split, cost-conscious), toggle jobs, preview YAML.
-2. **Write & test** — save `.github/workflows/*.yml` locally, then run a **native smoke test**.
-3. **Publish** — after a passing test, commit and open a pull request via `gh pr create`.
+1. **Configure** — choose provider and preset, toggle jobs, set provider options, preview YAML.
+2. **Write & test** — save pipeline config locally, then run a **native smoke test**.
+3. **Publish** — after a passing test, commit and push (GitHub Actions also opens a PR via `gh`).
 
 Publish is **blocked** until the most recent local test reports `passed`.
 
@@ -125,12 +138,22 @@ Never commit real secrets. CI Studio shows a checklist but does not write secret
 
 ## Publish requirements
 
+**GitHub Actions**
+
 - Git repo with GitHub `origin`
 - `gh auth login` completed
 - Local smoke test passed
 - Workflow file written locally
 
 Publish creates branch `rtk/ci-workflow` (when on main/master) and opens a PR with a secrets checklist.
+
+**Other providers** (GitLab, Codemagic, CircleCI, Azure, Bitbucket)
+
+- Git repo with write access
+- Local smoke test passed
+- Pipeline file written locally
+
+Publish commits and pushes branch `rtk/ci-workflow` with the generated config and `CI_SETUP.md`.
 
 ## Setup Studio integration
 

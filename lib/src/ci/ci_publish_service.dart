@@ -7,6 +7,7 @@ import 'ci_secrets_checklist.dart';
 import 'ci_test_models.dart';
 import 'ci_tooling_detect.dart';
 import 'ci_workflow_paths.dart';
+import 'ci_provider.dart';
 import 'ci_workflow_spec.dart';
 
 class CiPublishResult {
@@ -20,6 +21,7 @@ class CiPublishResult {
     this.readmeBadge,
     this.branchProtectionHint,
     this.ciSetupPath,
+    this.manualNextSteps,
   });
 
   final String branch;
@@ -31,6 +33,7 @@ class CiPublishResult {
   final String? readmeBadge;
   final String? branchProtectionHint;
   final String? ciSetupPath;
+  final List<String>? manualNextSteps;
 
   Map<String, dynamic> toJson() => {
         'branch': branch,
@@ -43,6 +46,7 @@ class CiPublishResult {
         if (branchProtectionHint != null)
           'branch_protection_hint': branchProtectionHint,
         if (ciSetupPath != null) 'ci_setup_path': ciSetupPath,
+        if (manualNextSteps != null) 'manual_next_steps': manualNextSteps,
       };
 }
 
@@ -70,6 +74,30 @@ Future<CiPublishResult> publishCiWorkflow({
     throw CiPublishBlockedException('git is required to publish');
   }
 
+  final providerInfo = ciProviderInfo(spec.provider);
+  if (providerInfo.supportsGhPublish) {
+    return _publishViaGitHubPr(
+      projectRoot: projectRoot,
+      spec: spec,
+      writtenPaths: writtenPaths,
+      envPaths: envPaths,
+    );
+  }
+  return _publishGeneric(
+    projectRoot: projectRoot,
+    spec: spec,
+    writtenPaths: writtenPaths,
+    envPaths: envPaths,
+    providerInfo: providerInfo,
+  );
+}
+
+Future<CiPublishResult> _publishViaGitHubPr({
+  required Directory projectRoot,
+  required CiWorkflowSpec spec,
+  required List<String> writtenPaths,
+  Map<String, String>? envPaths,
+}) async {
   final tooling = await detectCiTooling();
   final gh = tooling['gh'] as Map<String, dynamic>;
   if (gh['authenticated'] != true) {
@@ -181,6 +209,65 @@ Future<CiPublishResult> publishCiWorkflow({
             .existsSync()
         ? CiWorkflowPaths.ciSetupDoc
         : null,
+  );
+}
+
+Future<CiPublishResult> _publishGeneric({
+  required Directory projectRoot,
+  required CiWorkflowSpec spec,
+  required List<String> writtenPaths,
+  Map<String, String>? envPaths,
+  required CiProviderInfo providerInfo,
+}) async {
+  final branch = await _resolvePublishBranch(projectRoot);
+  if (branch != await _currentBranch(projectRoot)) {
+    await _runGit(projectRoot, ['checkout', '-B', branch]);
+  }
+
+  final toAdd = <String>[
+    ...writtenPaths,
+    if (File(p.join(projectRoot.path, CiWorkflowPaths.ciSetupDoc)).existsSync())
+      CiWorkflowPaths.ciSetupDoc,
+    if (File(p.join(projectRoot.path, 'fastlane', 'Fastfile')).existsSync())
+      'fastlane/Fastfile',
+  ];
+
+  await _runGit(projectRoot, ['add', ...toAdd]);
+
+  final status = await Process.run(
+    'git',
+    ['status', '--porcelain'],
+    workingDirectory: projectRoot.path,
+  );
+  if (status.stdout.toString().trim().isEmpty) {
+    throw CiPublishBlockedException('No workflow changes to commit');
+  }
+
+  await _runGit(projectRoot, [
+    'commit',
+    '-m',
+    'Add Flutter CI pipeline (${providerInfo.label})',
+  ]);
+
+  await _runGit(projectRoot, ['push', '-u', 'origin', branch]);
+
+  final secrets = ciSecretsChecklist(spec: spec, envPaths: envPaths);
+
+  return CiPublishResult(
+    branch: branch,
+    workflowPaths: writtenPaths,
+    secretsRequired: secrets.map((s) => s.toJson()).toList(),
+    committed: true,
+    pushed: true,
+    ciSetupPath: File(p.join(projectRoot.path, CiWorkflowPaths.ciSetupDoc))
+            .existsSync()
+        ? CiWorkflowPaths.ciSetupDoc
+        : null,
+    manualNextSteps: [
+      'Open ${providerInfo.label} and confirm the pipeline ran on branch `$branch`.',
+      'Configure secrets/variables listed in CI_SETUP.md in the ${providerInfo.label} UI.',
+      'Docs: ${providerInfo.docsUrl}',
+    ],
   );
 }
 

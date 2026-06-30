@@ -1,6 +1,7 @@
 import 'package:flutter_project_setup_toolkit/src/devices/device_service.dart';
 import 'package:flutter_project_setup_toolkit/src/quick_test/quick_test_models.dart';
 import 'package:flutter_project_setup_toolkit/src/quick_test/quick_test_ui_html.dart';
+import 'package:flutter_project_setup_toolkit/src/studio/studio_nav.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -63,14 +64,28 @@ offline-device\toffline
     });
   });
 
-  test('quick test studio HTML includes Git URL input and Run button', () {
+  test('quick test studio HTML includes source modes and Run button', () {
     final html = quickTestStudioHtml();
     expect(html, contains('Quick Test Studio'));
+    expect(html, contains('id="projectPath"'));
+    expect(html, contains('id="browseBtn"'));
+    expect(html, contains('name="sourceMode"'));
     expect(html, contains('id="gitUrl"'));
     expect(html, contains('Install into Android'));
     expect(html, contains('Install into iOS'));
     expect(html, contains('Run quick test'));
-    expect(html, contains('Check repo'));
+    expect(html, contains('Check project'));
     expect(html, contains('TestFlight IPA'));
+  });
+
+  test('wrapStudioPage injects rtkPickProjectFolder for quick test HTML', () {
+    final wrapped = wrapStudioPage(quickTestStudioHtml());
+    expect(wrapped, contains('window.rtkPickProjectFolder = async function'));
+    expect(wrapped, contains('window.rtkSaveProject = function'));
+    final bodyIdx = wrapped.indexOf('<body>');
+    final helperIdx = wrapped.indexOf('window.rtkPickProjectFolder = async function');
+    final pageScriptIdx = wrapped.indexOf('async function pickProjectFolder');
+    expect(helperIdx, greaterThan(bodyIdx));
+    expect(helperIdx, lessThan(pageScriptIdx));
   });
 }

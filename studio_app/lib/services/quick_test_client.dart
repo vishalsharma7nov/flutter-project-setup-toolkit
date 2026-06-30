@@ -64,6 +64,13 @@ String quickTestPlatformForDevice() {
   return 'all';
 }
 
+Map<String, dynamic> localSourcePayload(String path) {
+  return {
+    'type': 'local',
+    'path': path.trim(),
+  };
+}
+
 Map<String, dynamic> gitSourcePayload({
   required String url,
   String ref = 'main',

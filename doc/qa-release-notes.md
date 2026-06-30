@@ -13,10 +13,11 @@ dart run :toolkit_studio
 
 | Mode | Range | When to use |
 |------|-------|-------------|
-| **HEAD~1 → HEAD** (default) | Previous commit vs latest | Daily smoke / per-commit QA |
+| **Codebase scan** | Full project layout | No git, single commit, brownfield, or unknown history |
+| **HEAD~1 → HEAD** | Previous commit vs latest | Daily smoke / per-commit QA (needs ≥2 commits) |
 | **Last tag → HEAD** | Since last git tag | Release-candidate handoff |
 
-Requires a local `.git` directory with **at least two commits**.
+When git compare is unavailable, Toolkit **automatically falls back** to codebase scan (`source: codebase` in API JSON).
 
 ## Studio features
 

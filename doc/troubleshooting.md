@@ -18,12 +18,12 @@ Common issues when using Flutter Project Setup Toolkit.
 | Blank page / connection refused | Server not running | Run `dart run :toolkit_studio` from toolkit repo |
 | Port in use | Another process on 8765 | `dart run :toolkit_studio --port 8767` |
 | macOS desktop blank | Server slow to start | Wait or use `--browser` |
-| Folder picker cancels immediately | App behind terminal / double-click Browse | Click the Toolkit window first; wait for one picker dialog |
+| Folder picker cancels immediately | App behind terminal / double-click Browse | Focus the Toolkit window; click Browse once and wait |
+| Folder picker unavailable (Linux) | Missing zenity/kdialog | Install `zenity` or `kdialog`, or type the path manually |
 | Studio changes not visible | HTML cached | Restart `dart run :toolkit_studio` after toolkit updates |
 | `Desktop app not found` | Wrong working directory | Run from toolkit repo root where `studio_app/` exists |
 | Studio stuck on loading (45s) | `/api/environment` failing | Restart studio; if Docker is not installed, update toolkit (older builds crashed env detect) |
 | `path` dependency not found | Wrong toolkit folder in `pubspec.yaml` | Use `flutter-project-setup-toolkit`, not `flutter-release-toolkit` |
-| Folder picker cancels immediately | App behind terminal / double-click Browse | Focus the Toolkit window; click Browse once and wait |
 
 ## Setup
 
@@ -67,6 +67,13 @@ dart pub get
 dart analyze
 dart test
 ```
+
+## QA release notes
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Need at least 2 commits | Git compare selected with short history | Use **Codebase scan** in compare dropdown, or let auto mode fall back |
+| Empty checklist | Docs-only or tiny project | Use codebase scan; add features under `lib/features/` |
 
 ## Getting help
 

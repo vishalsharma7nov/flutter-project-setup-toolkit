@@ -256,7 +256,7 @@ dart test
 
 1. Push to [github.com/vishalsharma7nov/flutter-project-setup-toolkit](https://github.com/vishalsharma7nov/flutter-project-setup-toolkit).
 2. Push this directory as the repository root.
-3. Tag releases: `v0.1.0`.
+3. Tag releases: `v0.2.0` (see [CHANGELOG.md](CHANGELOG.md) for history).
 4. Optional: `dart pub publish` — see [doc/publishing.md](doc/publishing.md).
 
 ---

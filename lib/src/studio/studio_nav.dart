@@ -45,6 +45,49 @@ const studioProjectScript = r'''
     }
     return path;
   };
+  window.rtkPickProjectFolder = async function (inputId) {
+    const input = document.getElementById(inputId || "projectPath");
+    const saved = rtkLoadProject();
+    const initial = (input && input.value ? input.value.trim() : "") || saved || "";
+    if (typeof window.rtkNativePickFolder === "function") {
+      const path = await window.rtkNativePickFolder(initial);
+      if (path) {
+        if (input) input.value = path;
+        rtkSaveProject(path);
+      }
+      return path || null;
+    }
+    const qs = initial ? "?initial=" + encodeURIComponent(initial) : "";
+    let res;
+    try {
+      res = await fetch("/api/pick-folder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({ initial_path: initial || null }),
+      });
+    } catch (_) {
+      res = await fetch("/api/pick-folder" + qs, {
+        method: "GET",
+        headers: { "Accept": "application/json" },
+        credentials: "same-origin",
+      });
+    }
+    const text = await res.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch (_) {}
+    if (!res.ok) throw new Error(data.error || res.statusText || "Folder picker failed");
+    if (data.cancelled) return null;
+    if (data.path) {
+      if (input) input.value = data.path;
+      rtkSaveProject(data.path);
+      return data.path;
+    }
+    return null;
+  };
 })();
 </script>
 ''';
@@ -60,8 +103,8 @@ String wrapStudioPage(String innerHtml) {
   if (!html.contains('.studio-nav')) {
     html = html.replaceFirst('</style>', '$studioNavStyles</style>');
   }
-  if (!html.contains('rtkSaveProject')) {
-    html = html.replaceFirst('</body>', '$studioProjectScript</body>');
+  if (!html.contains('window.rtkSaveProject = function')) {
+    html = html.replaceFirst('<body>', '<body>$studioProjectScript');
   }
   return html;
 }

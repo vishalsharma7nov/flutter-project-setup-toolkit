@@ -18,6 +18,8 @@ import 'ci_tooling_detect.dart';
 import 'ci_workflow_paths.dart';
 import 'ci_workflow_spec.dart';
 import 'ci_yaml_validate.dart';
+import 'ci_pipeline_generator.dart';
+import 'ci_provider.dart';
 import 'github_actions_template.dart';
 
 class CiStudioService {
@@ -49,18 +51,29 @@ class CiStudioService {
       configError = '$e';
     }
 
-    final workflowsDir = Directory(p.join(projectRoot.path, '.github', 'workflows'));
     final existing = <String, String>{};
+    for (final relPath in allKnownWorkflowPaths()) {
+      final file = File(p.join(projectRoot.path, relPath));
+      if (file.existsSync()) {
+        existing[relPath] = file.readAsStringSync();
+      }
+    }
+    // Also pick up any other GitHub workflow YAML files.
+    final workflowsDir = Directory(p.join(projectRoot.path, '.github', 'workflows'));
     if (workflowsDir.existsSync()) {
       for (final entity in workflowsDir.listSync()) {
         if (entity is File && entity.path.endsWith('.yml')) {
-          existing[p.relative(entity.path, from: projectRoot.path)] =
-              entity.readAsStringSync();
+          final rel = p.relative(entity.path, from: projectRoot.path);
+          existing.putIfAbsent(rel, () => entity.readAsStringSync());
         }
       }
     }
 
-    final defaultSpec = _defaultSpecFromConfig(projectRoot, config);
+    final detectedProvider = _detectProvider(existing.keys.toList());
+
+    final defaultSpec = _defaultSpecFromConfig(projectRoot, config).copyWith(
+      provider: detectedProvider,
+    );
     final flutterInstalled = _flutterInstalled();
 
     final devopsSetup = await detectDevOpsSetup(
@@ -101,6 +114,8 @@ class CiStudioService {
       'default_spec': defaultSpec.toJson(),
       'existing_workflows': existing.keys.toList(),
       'existing_workflow_contents': existing,
+      'detected_provider': detectedProvider.name,
+      'providers': ciProviderCatalog().map((p) => p.toJson()).toList(),
       'tooling': tooling,
       'github_remote': remote,
       'checks': checks,
@@ -141,7 +156,8 @@ class CiStudioService {
     }
     final validationErrors = <String, String?>{};
     for (final entry in files.entries) {
-      validationErrors[entry.key] = validateWorkflowYaml(entry.value);
+      validationErrors[entry.key] =
+          validatePipelineYaml(entry.value, provider: spec.provider);
     }
     return {
       'files': files,
@@ -171,7 +187,8 @@ class CiStudioService {
     final written = <String>[];
 
     for (final entry in files.entries) {
-      final error = validateWorkflowYaml(entry.value);
+      final error =
+          validatePipelineYaml(entry.value, provider: spec.provider);
       if (error != null) {
         throw ArgumentError('Invalid YAML for ${entry.key}: $error');
       }
@@ -270,17 +287,13 @@ class CiStudioService {
     required CiWorkflowSpec spec,
   }) async {
     final paths = lastWrittenPaths ??
-        CiWorkflowPaths.workflowFilesFor(
-          split: spec.pipelineMode == CiPipelineMode.split,
-          hasCiJobs: spec.hasCiJobs,
-          hasReleaseJobs: spec.hasReleaseJobs,
-        );
+        workflowPathsForSpec(spec);
     final config = loadConfig(projectRoot);
     return publishCiWorkflow(
       projectRoot: projectRoot,
       testState: testState,
       spec: spec,
-      writtenPaths: paths.where((p) => p.contains('workflows')).toList(),
+      writtenPaths: paths,
       envPaths: config.environments,
     );
   }
@@ -304,6 +317,19 @@ class CiStudioService {
     } on Object {
       return false;
     }
+  }
+
+  CiProvider _detectProvider(List<String> existingPaths) {
+    for (final info in ciProviderCatalog()) {
+      if (info.provider == CiProvider.githubActions) continue;
+      for (final path in info.outputPaths) {
+        if (existingPaths.contains(path)) return info.provider;
+      }
+    }
+    if (existingPaths.any((p) => p.startsWith('.github/workflows/'))) {
+      return CiProvider.githubActions;
+    }
+    return CiProvider.githubActions;
   }
 
   bool _isAppleSilicon() {

@@ -1,6 +1,10 @@
-/// Configurable GitHub Actions workflow generation for CI Studio.
+import 'ci_provider.dart';
+
+/// Configurable CI/CD pipeline generation for CI Studio.
 class CiWorkflowSpec {
   CiWorkflowSpec({
+    this.provider = CiProvider.githubActions,
+    this.providerConfig = const {},
     this.preset = CiWorkflowPreset.full,
     this.pipelineMode = CiPipelineMode.split,
     this.analyze = true,
@@ -24,6 +28,8 @@ class CiWorkflowSpec {
     this.actCompatFlutterX64 = false,
   });
 
+  final CiProvider provider;
+  final Map<String, dynamic> providerConfig;
   final CiWorkflowPreset preset;
   final CiPipelineMode pipelineMode;
   final bool analyze;
@@ -97,6 +103,9 @@ class CiWorkflowSpec {
     );
     final base = CiWorkflowSpec.fromPreset(preset);
     return base.copyWith(
+      provider: parseCiProvider(json['provider'] as String?),
+      providerConfig: _parseProviderConfig(json['provider_config']) ??
+          base.providerConfig,
       pipelineMode: _parsePipelineMode(json['pipeline_mode'] as String?) ??
           base.pipelineMode,
       analyze: json['analyze'] as bool? ?? base.analyze,
@@ -129,6 +138,8 @@ class CiWorkflowSpec {
   }
 
   Map<String, dynamic> toJson() => {
+        'provider': provider.name,
+        'provider_config': providerConfig,
         'preset': preset.name,
         'pipeline_mode': pipelineMode.name,
         'analyze': analyze,
@@ -153,6 +164,8 @@ class CiWorkflowSpec {
       };
 
   CiWorkflowSpec copyWith({
+    CiProvider? provider,
+    Map<String, dynamic>? providerConfig,
     CiWorkflowPreset? preset,
     CiPipelineMode? pipelineMode,
     bool? analyze,
@@ -176,6 +189,8 @@ class CiWorkflowSpec {
     bool? actCompatFlutterX64,
   }) {
     return CiWorkflowSpec(
+      provider: provider ?? this.provider,
+      providerConfig: providerConfig ?? this.providerConfig,
       preset: preset ?? this.preset,
       pipelineMode: pipelineMode ?? this.pipelineMode,
       analyze: analyze ?? this.analyze,
@@ -229,4 +244,9 @@ CiPipelineMode? _parsePipelineMode(String? raw) {
 List<String>? _parseEnvNames(Object? raw) {
   if (raw is! List) return null;
   return raw.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
+}
+
+Map<String, dynamic>? _parseProviderConfig(Object? raw) {
+  if (raw is! Map) return null;
+  return raw.map((key, value) => MapEntry(key.toString(), value));
 }

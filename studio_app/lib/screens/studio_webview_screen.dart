@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -46,7 +47,7 @@ class _StudioWebViewScreenState extends State<StudioWebViewScreen> {
       };
 
   bool get _skipProjectRegistration =>
-      widget.initialView == 'quick-test' ||
+      (widget.initialView == 'quick-test' && widget.projectPath.isEmpty) ||
       (widget.initialView == 'doctor' && widget.projectPath.isEmpty);
 
   @override
@@ -54,6 +55,12 @@ class _StudioWebViewScreenState extends State<StudioWebViewScreen> {
     super.initState();
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..addJavaScriptChannel(
+        'RtkFolderPicker',
+        onMessageReceived: (message) {
+          unawaited(_handleFolderPickRequest(message.message));
+        },
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (url) {
@@ -97,7 +104,54 @@ class _StudioWebViewScreenState extends State<StudioWebViewScreen> {
     }
   }
 
+  Future<void> _handleFolderPickRequest(String raw) async {
+    String requestId = '';
+    try {
+      final payload = jsonDecode(raw) as Map<String, dynamic>;
+      requestId = payload['id'] as String? ?? '';
+      final path = await getDirectoryPath(
+        confirmButtonText: 'Select project folder',
+        initialDirectory: payload['initial'] as String?,
+      );
+      final escapedId = jsonEncode(requestId);
+      final escapedPath = jsonEncode(path);
+      await _controller.runJavaScript(
+        'window.rtkOnFolderPicked($escapedId, $escapedPath);',
+      );
+    } on Object catch (e, st) {
+      studioLogError('WebView: folder pick failed', e, st);
+      if (requestId.isNotEmpty) {
+        final escapedId = jsonEncode(requestId);
+        await _controller.runJavaScript(
+          'window.rtkOnFolderPicked($escapedId, null);',
+        );
+      }
+    }
+  }
+
+  Future<void> _injectFolderPickerBridge() async {
+    await _controller.runJavaScript(r'''
+      (function () {
+        if (window.rtkNativePickFolder) return;
+        window.rtkFolderPickResolvers = window.rtkFolderPickResolvers || {};
+        window.rtkNativePickFolder = function (initial) {
+          return new Promise(function (resolve) {
+            const id = "pick_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+            window.rtkFolderPickResolvers[id] = resolve;
+            RtkFolderPicker.postMessage(JSON.stringify({ id: id, initial: initial || "" }));
+          });
+        };
+        window.rtkOnFolderPicked = function (id, path) {
+          const resolve = window.rtkFolderPickResolvers[id];
+          if (resolve) resolve(path || null);
+          delete window.rtkFolderPickResolvers[id];
+        };
+      })();
+    ''');
+  }
+
   Future<void> _injectProjectContext() async {
+    await _injectFolderPickerBridge();
     if (_skipProjectRegistration) {
       if (mounted) {
         setState(() {
@@ -110,13 +164,20 @@ class _StudioWebViewScreenState extends State<StudioWebViewScreen> {
     }
     studioLog('WebView: injecting project context for ${widget.projectPath}');
     final escapedPath = jsonEncode(widget.projectPath);
+    final quickTestLocal = widget.initialView == 'quick-test';
     await _controller.runJavaScript('''
       (function () {
         const path = $escapedPath;
         localStorage.setItem("rtk_studio_project_path", path);
         const input = document.getElementById("projectPath");
         if (input) input.value = path;
+        ${quickTestLocal ? '''
+        const localMode = document.querySelector('input[name="sourceMode"][value="local"]');
+        if (localMode) localMode.checked = true;
+        if (typeof syncSourcePanels === "function") syncSourcePanels();
+        ''' : '''
         if (typeof loadProject === "function") loadProject();
+        '''}
         if (typeof rtkSyncProjectInput === "function") rtkSyncProjectInput();
       })();
     ''');

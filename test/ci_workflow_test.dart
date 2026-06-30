@@ -8,6 +8,8 @@ import 'package:flutter_project_setup_toolkit/src/ci/ci_publish_service.dart';
 import 'package:flutter_project_setup_toolkit/src/ci/ci_test_models.dart';
 import 'package:flutter_project_setup_toolkit/src/ci/ci_workflow_spec.dart';
 import 'package:flutter_project_setup_toolkit/src/ci/ci_yaml_validate.dart';
+import 'package:flutter_project_setup_toolkit/src/ci/ci_pipeline_generator.dart';
+import 'package:flutter_project_setup_toolkit/src/ci/ci_provider.dart';
 import 'package:flutter_project_setup_toolkit/src/ci/github_actions_template.dart';
 import 'package:flutter_project_setup_toolkit/src/config.dart';
 import 'package:flutter_project_setup_toolkit/src/models.dart';
@@ -46,6 +48,72 @@ void main() {
       final release = CiWorkflowSpec.fromPreset(CiWorkflowPreset.release);
       expect(release.androidAab, isTrue);
       expect(release.onPullRequest, isFalse);
+    });
+    test('JSON round-trip preserves provider', () {
+      final spec = CiWorkflowSpec.fromPreset(CiWorkflowPreset.full).copyWith(
+        provider: CiProvider.gitLabCi,
+        providerConfig: const {'flutter_image': 'custom/flutter:stable'},
+      );
+      final restored = CiWorkflowSpec.fromJson(spec.toJson());
+      expect(restored.provider, CiProvider.gitLabCi);
+      expect(restored.providerConfig['flutter_image'], 'custom/flutter:stable');
+    });
+  });
+
+  group('multi-provider generateWorkflowFiles', () {
+    test('GitLab CI produces .gitlab-ci.yml', () {
+      final spec = CiWorkflowSpec.fromPreset(CiWorkflowPreset.prChecks).copyWith(
+        provider: CiProvider.gitLabCi,
+      );
+      final files = generateWorkflowFiles(spec: spec, config: _sampleConfig());
+      expect(files.keys, ['.gitlab-ci.yml']);
+      expect(validatePipelineYaml(files.values.first, provider: CiProvider.gitLabCi), isNull);
+      expect(files.values.first, contains('dart analyze'));
+    });
+
+    test('Codemagic produces codemagic.yaml', () {
+      final spec = CiWorkflowSpec.fromPreset(CiWorkflowPreset.full).copyWith(
+        provider: CiProvider.codemagic,
+      );
+      final files = generateWorkflowFiles(spec: spec, config: _sampleConfig());
+      expect(files.keys, ['codemagic.yaml']);
+      expect(files.values.first, contains('workflows:'));
+    });
+
+    test('CircleCI produces .circleci/config.yml', () {
+      final spec = CiWorkflowSpec.fromPreset(CiWorkflowPreset.release).copyWith(
+        provider: CiProvider.circleCi,
+      );
+      final files = generateWorkflowFiles(spec: spec, config: _sampleConfig());
+      expect(files.keys, ['.circleci/config.yml']);
+      expect(files.values.first, contains('version: 2.1'));
+    });
+
+    test('Azure Pipelines produces azure-pipelines.yml', () {
+      final spec = CiWorkflowSpec.fromPreset(CiWorkflowPreset.full).copyWith(
+        provider: CiProvider.azurePipelines,
+      );
+      final files = generateWorkflowFiles(spec: spec, config: _sampleConfig());
+      expect(files.keys, ['azure-pipelines.yml']);
+      expect(files.values.first, contains('stages:'));
+    });
+
+    test('Bitbucket produces bitbucket-pipelines.yml', () {
+      final spec = CiWorkflowSpec.fromPreset(CiWorkflowPreset.prChecks).copyWith(
+        provider: CiProvider.bitbucketPipelines,
+      );
+      final files = generateWorkflowFiles(spec: spec, config: _sampleConfig());
+      expect(files.keys, ['bitbucket-pipelines.yml']);
+      expect(files.values.first, contains('pipelines:'));
+    });
+
+    test('non-GitHub providers force single pipeline mode', () {
+      final spec = CiWorkflowSpec.fromPreset(CiWorkflowPreset.full).copyWith(
+        provider: CiProvider.gitLabCi,
+        pipelineMode: CiPipelineMode.split,
+      );
+      final files = generateWorkflowFiles(spec: spec, config: _sampleConfig());
+      expect(files.length, 1);
     });
   });
 

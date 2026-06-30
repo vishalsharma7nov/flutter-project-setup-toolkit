@@ -4,6 +4,7 @@ import '../config.dart';
 import '../setup/setup_studio_service.dart';
 import 'environment_detect.dart';
 import 'flutter_project_structure.dart';
+import 'native_folder_picker.dart';
 import 'studio_http.dart';
 import 'studio_project_state.dart';
 
@@ -174,6 +175,36 @@ Future<void> handleStudioProjectCreate(
     });
   } on Object catch (e) {
     StudioHttp.respondJson(request.response, 400, {'error': '$e'});
+  }
+  await request.response.close();
+}
+
+Future<void> handleStudioPickFolder(HttpRequest request) async {
+  if (!nativeFolderPickerAvailable()) {
+    StudioHttp.respondJson(request.response, 501, {
+      'error': 'Folder picker is not available on this platform',
+    });
+    await request.response.close();
+    return;
+  }
+
+  try {
+    var initialDirectory = request.uri.queryParameters['initial'];
+    if (request.method == 'POST') {
+      final payload = await StudioHttp.readJsonBody(request);
+      initialDirectory ??= payload['initial_path'] as String?;
+    }
+    final path = await pickNativeFolder(
+      prompt: 'Select Flutter project folder',
+      initialDirectory: initialDirectory,
+    );
+    if (path == null || path.trim().isEmpty) {
+      StudioHttp.respondJson(request.response, 200, {'cancelled': true});
+    } else {
+      StudioHttp.respondJson(request.response, 200, {'path': path.trim()});
+    }
+  } on Object catch (e) {
+    StudioHttp.respondJson(request.response, 500, {'error': '$e'});
   }
   await request.response.close();
 }

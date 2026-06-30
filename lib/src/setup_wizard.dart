@@ -20,6 +20,7 @@ import 'api/api_protocol.dart';
 import 'api/api_scaffold.dart';
 import 'architecture/architecture_guardrails.dart';
 import 'ci/ci_workflow_spec.dart';
+import 'ci/ci_pipeline_generator.dart';
 import 'ci/github_actions_template.dart';
 
 enum EnvPreset {

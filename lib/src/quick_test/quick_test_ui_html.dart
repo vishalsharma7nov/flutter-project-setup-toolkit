@@ -101,6 +101,12 @@ String quickTestStudioHtml() => r'''
     .device-item input { width: auto; }
     .toggle-row { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0; font-size: 0.9rem; }
     .toggle-row input { width: auto; }
+    .source-toggle { display: flex; gap: 0.75rem; margin-bottom: 0.85rem; flex-wrap: wrap; }
+    .source-toggle label {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.88rem; color: var(--text); cursor: pointer;
+    }
+    .source-toggle input { width: auto; margin: 0; }
     .log-box {
       background: #05070f; border: 1px solid var(--border); border-radius: 10px;
       padding: 0.85rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -125,10 +131,10 @@ String quickTestStudioHtml() => r'''
 <body>
   <div class="wrap">
     <header>
-      <div class="badge">Git → device</div>
+      <div class="badge">Git or local → device</div>
       <h1>Quick Test Studio</h1>
       <p class="subtitle">
-        Paste a Git repo URL for a Flutter app or plugin, build APK and iOS artifacts,
+        Use a local Flutter project folder or paste a Git repo URL, build APK and iOS artifacts,
         and install on connected devices. Plugins are built via their <code>example/</code> app.
       </p>
     </header>
@@ -137,35 +143,56 @@ String quickTestStudioHtml() => r'''
     <div id="warnBanner" class="banner warn"></div>
 
     <div class="panel">
-      <h2>Git repository</h2>
-      <div class="field-wide" style="margin-bottom:0.75rem">
-        <label for="gitUrl">Repository URL</label>
-        <input id="gitUrl" type="url" placeholder="https://github.com/org/flutter-app.git" />
+      <h2>Project source</h2>
+      <div class="source-toggle">
+        <label><input type="radio" name="sourceMode" value="local" checked /> Local folder</label>
+        <label><input type="radio" name="sourceMode" value="git" /> Git repository</label>
       </div>
-      <div class="row">
-        <div class="field">
-          <label for="gitRef">Branch</label>
-          <input id="gitRef" type="text" value="main" />
+      <div id="localSourcePanel">
+        <div class="row">
+          <div class="field-wide">
+            <label for="projectPath">Flutter project path</label>
+            <input id="projectPath" type="text" placeholder="/path/to/your/flutter/app" />
+          </div>
+          <div class="field" style="flex:0;min-width:auto">
+            <label>&nbsp;</label>
+            <button type="button" class="secondary" id="browseBtn">Browse…</button>
+          </div>
         </div>
-        <div class="field">
-          <label for="gitSubdir">Subdirectory (optional)</label>
-          <input id="gitSubdir" type="text" placeholder="example for plugin-only" />
-        </div>
-        <div class="field">
-          <label for="gitAuth">Auth</label>
-          <select id="gitAuth">
-            <option value="ssh">SSH</option>
-            <option value="https">HTTPS (public)</option>
-            <option value="https_token">HTTPS + token</option>
-          </select>
-        </div>
+        <p class="subtitle" style="margin-top:0.5rem;font-size:0.85rem">
+          Pick a folder on this machine or type a path manually.
+        </p>
       </div>
-      <div id="tokenRow" class="field-wide hidden" style="margin-top:0.75rem">
-        <label for="gitToken">Personal access token (session only)</label>
-        <input id="gitToken" type="password" autocomplete="off" />
+      <div id="gitSourcePanel" class="hidden">
+        <div class="field-wide" style="margin-bottom:0.75rem">
+          <label for="gitUrl">Repository URL</label>
+          <input id="gitUrl" type="url" placeholder="https://github.com/org/flutter-app.git" />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="gitRef">Branch</label>
+            <input id="gitRef" type="text" value="main" />
+          </div>
+          <div class="field">
+            <label for="gitSubdir">Subdirectory (optional)</label>
+            <input id="gitSubdir" type="text" placeholder="example for plugin-only" />
+          </div>
+          <div class="field">
+            <label for="gitAuth">Auth</label>
+            <select id="gitAuth">
+              <option value="ssh">SSH</option>
+              <option value="https">HTTPS (public)</option>
+              <option value="https_token">HTTPS + token</option>
+            </select>
+          </div>
+        </div>
+        <div id="tokenRow" class="field-wide hidden" style="margin-top:0.75rem">
+          <label for="gitToken">Personal access token (session only)</label>
+          <input id="gitToken" type="password" autocomplete="off" />
+        </div>
       </div>
       <div class="actions">
-        <button type="button" id="checkBtn">Check repo</button>
+        <button type="button" id="checkBtn">Check project</button>
       </div>
     </div>
 
@@ -267,7 +294,22 @@ String quickTestStudioHtml() => r'''
       return data;
     }
 
-    function gitSourcePayload() {
+    function sourceMode() {
+      return document.querySelector('input[name="sourceMode"]:checked')?.value || "local";
+    }
+
+    function syncSourcePanels() {
+      const git = sourceMode() === "git";
+      $("localSourcePanel").classList.toggle("hidden", git);
+      $("gitSourcePanel").classList.toggle("hidden", !git);
+      $("tokenRow").classList.toggle("hidden", $("gitAuth").value !== "https_token");
+    }
+    window.syncSourcePanels = syncSourcePanels;
+
+    function quickTestSourcePayload() {
+      if (sourceMode() === "local") {
+        return { type: "local", path: $("projectPath").value.trim() };
+      }
       const payload = {
         type: "git",
         url: $("gitUrl").value.trim(),
@@ -279,6 +321,17 @@ String quickTestStudioHtml() => r'''
         payload.token = $("gitToken").value;
       }
       return payload;
+    }
+
+    function validateSourceInput() {
+      if (sourceMode() === "local") {
+        const path = $("projectPath").value.trim();
+        if (!path) throw new Error("Enter a Flutter project path on this machine.");
+        return;
+      }
+      if (!$("gitUrl").value.trim()) {
+        throw new Error("Enter a Git repository URL.");
+      }
     }
 
     function envSourceMode() {
@@ -420,6 +473,13 @@ String quickTestStudioHtml() => r'''
         $("testflightToggle").checked = false;
       }
       updatePlatformButtons();
+      const browseBtn = $("browseBtn");
+      if (browseBtn) {
+        browseBtn.disabled = false;
+        browseBtn.title = caps.pick_folder === false
+          ? "Folder picker unavailable on this host — type the path manually"
+          : "Open folder picker on this machine";
+      }
     }
 
     async function checkRepo() {
@@ -427,8 +487,9 @@ String quickTestStudioHtml() => r'''
       $("warnBanner").classList.remove("visible");
       $("checkBtn").disabled = true;
       try {
+        validateSourceInput();
         const env = $("envSelect").value || "dev";
-        const body = { source: gitSourcePayload(), env };
+        const body = { source: quickTestSourcePayload(), env };
         const es = buildEnvSource();
         if (es) body.env_source = es;
         const data = await api("/api/quick-test/preflight", {
@@ -482,7 +543,7 @@ String quickTestStudioHtml() => r'''
 
     async function runQuickTest(platform) {
       if (!preflightData) {
-        $("errorBanner").textContent = "Run Check repo first.";
+        $("errorBanner").textContent = "Run Check project first.";
         $("errorBanner").classList.add("visible");
         return;
       }
@@ -505,7 +566,7 @@ String quickTestStudioHtml() => r'''
       setStatus("running", labels[platform] || "Running");
       try {
         const body = {
-          source: gitSourcePayload(),
+          source: quickTestSourcePayload(),
           env: $("envSelect").value || "dev",
           platform: platform,
           install_to_devices: platform === "all" ? $("installToggle").checked : true,
@@ -577,9 +638,11 @@ String quickTestStudioHtml() => r'''
       }
     }
 
-    $("gitAuth").addEventListener("change", () => {
-      $("tokenRow").classList.toggle("hidden", $("gitAuth").value !== "https_token");
+    document.querySelectorAll('input[name="sourceMode"]').forEach((el) => {
+      el.addEventListener("change", syncSourcePanels);
     });
+
+    $("gitAuth").addEventListener("change", syncSourcePanels);
 
     $("envSourceMode").addEventListener("change", () => {
       const mode = envSourceMode();
@@ -594,8 +657,94 @@ String quickTestStudioHtml() => r'''
     $("installIosBtn").addEventListener("click", () => runQuickTest("ios"));
     $("cancelBtn").addEventListener("click", cancelRun);
     $("addKvBtn").addEventListener("click", () => addKvRow("", ""));
+    $("projectPath").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") checkRepo();
+    });
 
-    refreshEnvironment();
+    async function pickProjectFolder(inputId) {
+      const input = document.getElementById(inputId || "projectPath");
+      const storageKey = "rtk_studio_project_path";
+      const saved = localStorage.getItem(storageKey) || "";
+      const initial = (input && input.value ? input.value.trim() : "") || saved;
+      const qs = initial ? "?initial=" + encodeURIComponent(initial) : "";
+      let res;
+      try {
+        res = await fetch("/api/pick-folder", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({ initial_path: initial || null }),
+        });
+      } catch (_) {
+        res = await fetch("/api/pick-folder" + qs, {
+          method: "GET",
+          headers: { "Accept": "application/json" },
+          credentials: "same-origin",
+        });
+      }
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch (_) {}
+      if (!res.ok) {
+        throw new Error(data.error || res.statusText || "Folder picker failed");
+      }
+      if (data.cancelled) return null;
+      if (data.path) {
+        if (input) input.value = data.path;
+        localStorage.setItem(storageKey, data.path);
+        return data.path;
+      }
+      return null;
+    }
+
+    async function browseProjectFolder() {
+      $("errorBanner").classList.remove("visible");
+      $("warnBanner").classList.remove("visible");
+      $("browseBtn").disabled = true;
+      try {
+        $("warnBanner").textContent =
+          "Opening folder picker on this Mac — if you do not see it, check Finder in the Dock (it may be behind Safari).";
+        $("warnBanner").classList.add("visible");
+        const path = await pickProjectFolder("projectPath");
+        $("warnBanner").classList.remove("visible");
+        if (path) {
+          document.querySelector('input[name="sourceMode"][value="local"]').checked = true;
+          syncSourcePanels();
+        }
+      } catch (e) {
+        $("warnBanner").classList.remove("visible");
+        $("errorBanner").textContent = e.message;
+        $("errorBanner").classList.add("visible");
+      } finally {
+        $("browseBtn").disabled = false;
+      }
+    }
+
+    $("browseBtn").addEventListener("click", browseProjectFolder);
+
+    async function bootQuickTest() {
+      syncSourcePanels();
+      const params = new URLSearchParams(location.search);
+      const queryProject = params.get("project");
+      if (queryProject) {
+        $("projectPath").value = queryProject;
+        document.querySelector('input[name="sourceMode"][value="local"]').checked = true;
+        syncSourcePanels();
+        if (typeof rtkSaveProject === "function") rtkSaveProject(queryProject);
+      } else if (typeof rtkSyncProjectInput === "function") {
+        const path = await rtkSyncProjectInput();
+        if (path) {
+          document.querySelector('input[name="sourceMode"][value="local"]').checked = true;
+          syncSourcePanels();
+        }
+      }
+      await refreshEnvironment();
+    }
+
+    bootQuickTest();
   </script>
 </body>
 </html>

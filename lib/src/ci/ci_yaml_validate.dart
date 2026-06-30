@@ -1,5 +1,37 @@
+import 'ci_provider.dart';
+
 /// Basic YAML structure validation without external dependencies.
 String? validateWorkflowYaml(String yaml) {
+  return validatePipelineYaml(yaml, provider: CiProvider.githubActions);
+}
+
+String? validatePipelineYaml(
+  String yaml, {
+  CiProvider provider = CiProvider.githubActions,
+}) {
+  final basic = _basicYamlChecks(yaml);
+  if (basic != null) return basic;
+
+  return switch (provider) {
+    CiProvider.githubActions => _validateGitHubActions(yaml),
+    CiProvider.gitLabCi =>
+      yaml.contains('stages:') ? null : 'Missing GitLab CI stages: block',
+    CiProvider.codemagic =>
+      yaml.contains('workflows:') ? null : 'Missing Codemagic workflows: block',
+    CiProvider.circleCi =>
+      yaml.contains('version:') && yaml.contains('jobs:')
+          ? null
+          : 'Missing CircleCI version: or jobs: block',
+    CiProvider.azurePipelines =>
+      yaml.contains('stages:') || yaml.contains('jobs:')
+          ? null
+          : 'Missing Azure Pipelines stages: or jobs: block',
+    CiProvider.bitbucketPipelines =>
+      yaml.contains('pipelines:') ? null : 'Missing Bitbucket pipelines: block',
+  };
+}
+
+String? _basicYamlChecks(String yaml) {
   if (yaml.trim().isEmpty) {
     return 'Workflow YAML is empty';
   }
@@ -21,6 +53,10 @@ String? validateWorkflowYaml(String yaml) {
   if (!sawContent) {
     return 'Workflow YAML has no content';
   }
+  return null;
+}
+
+String? _validateGitHubActions(String yaml) {
   if (!yaml.contains('jobs:')) {
     return 'Missing top-level jobs: key';
   }
